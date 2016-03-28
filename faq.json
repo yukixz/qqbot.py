@@ -1,0 +1,67 @@
+[
+  {
+    "keywords": ["下载"],
+    "message": "poi 下载地址\n百度网盘：https://0u0.moe/poi\nGithub: https://github.com/poooi/poi/releases"
+  },
+  {
+    "keywords": ["版本", "最新版", "稳定版"],
+    "whitelist": ["qq"],
+    "message": "poi 最新稳定版：6.0.1（请更新所有插件）\npoi 最新测试版：-\n测试版可能存在 bug，请谨慎使用"
+  },
+  {
+    "keywords": ["掉落", "掉率", "哪里掉"],
+    "message": "poi-statistics # 掉落统计：\nhttp://db.kcwiki.moe/drop/"
+  },
+  {
+    "keywords": ["官推"],
+    "message": "「艦これ」開発/運営：https://twitter.com/kancolle_staff\nkcwiki 官推翻译：http://t.kcwiki.moe/"
+  },
+  {
+    "keywords": ["白屏"],
+    "whitelist": ["不", "没", "还"],
+    "message": "poi 白屏请先检查：\n1. poi 的代理设置是否正确\n2. poi 的主页是否不是 about:blank\n若仍有问题，请提供以下信息：\n1. poi 的版本号是什么？\n2. 用的是什么代理？\n3. poi 能否打开百度？"
+  },
+  {
+    "keywords": ["窗口大小"],
+    "whitelist": ["不", "没", "还"],
+    "message": "poi 窗口大小无法更改：\n1. 请按 Alt 打开菜单（Windows/Linux 用户）\n2. 在「poi」菜单中勾选「允许变更窗口大小」"
+  },
+  {
+    "keywords": ["删除缓存", "删缓存"],
+    "whitelist": ["不", "没", "还"],
+    "message": "如何删除缓存：\n1. 在 poi 左下角工具栏中，点击闪电图标打开自定义缓存目录，清空该目录\n2. 请检查代理的缓存设置"
+  },
+  {
+    "keywords": ["删除config", "删config"],
+    "message": "删除 poi 配置文件：\n1. 关闭 poi\n2. 在文件管理器中打开 poi 数据目录\nWindows: %APPDATA%/poi\nMac: ~/Library/Application Support/poi\nLinux: ~/.config/poi\n3. 删除文件「config.cson」"
+  },
+  {
+    "keywords": ["同步数据"],
+    "message": "您可以使用同步软件同步特定目录/文件、以同步 poi 数据\npoi 数据目录：\n* Windows: %APPDATA%/poi\n* Mac: ~/Library/Application Support/poi\n* Linux: ~/.config/poi\n需同步的目录/文件：\n* config.cson 设置\n* quest_tracking_123456789.cson 任务计数\n* akashic-records 航海日志\n* battle-detail 战斗详情\n* hairstrength 我变强了\n* hensei-nikki 编成日记\n* wheres-my-fuel-gone 耗资记录"
+  },
+  {
+    "keywords": ["什么群", "啥群"],
+    "message": "这里是 poi 用户讨论群兼舰娘讨论群"
+  },
+  {
+    "keywords": ["求奶", "奶我", "奶你", "奶他", "奶她"],
+    "message": ["天下皆欧 唯你独非", "氪不改命 玄不救非", "天赋欧颜 逢赌必出"],
+    "interval": 4,
+    "notify": false
+  },
+  {
+    "keywords": ["早安", "早上好", "小鳖早"],
+    "message": "早安",
+    "interval": 4
+  },
+  {
+    "keywords": ["午安", "中午好"],
+    "message": "午安",
+    "interval": 4
+  },
+  {
+    "keywords": ["晚安", "好梦"],
+    "message": "晚安",
+    "interval": 4
+  }
+]
