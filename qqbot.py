@@ -3,6 +3,7 @@
 import json
 import random
 import time
+from collections import deque
 
 from pycoolq import coolqBot, SendMessage
 
@@ -139,7 +140,7 @@ def roll(message):
 REPEAT_QUEUE_SIZE = 20
 REPEAT_COUNT_MIN = 2
 REPEAT_COUNT_MAX = 4
-queue = []
+queue = deque()
 
 
 class QueueMessage:
@@ -155,10 +156,10 @@ def repeat(message):
 
     # Find & remove matched message from queue.
     msg = None
-    for qmsg in queue:
-        if qmsg.text == text:
-            msg = qmsg
-            queue.remove(qmsg)
+    for m in queue:
+        if m.text == text:
+            msg = m
+            queue.remove(m)
             break
 
     # Increase message count
@@ -167,9 +168,9 @@ def repeat(message):
     msg.count += 1
 
     # Push message back to queue
-    queue.append(msg)
+    queue.appendleft(msg)
     if len(queue) > REPEAT_QUEUE_SIZE:
-        queue.pop(0)
+        queue.pop()
 
     # Repeat message
     if msg.repeated:
@@ -181,11 +182,10 @@ def repeat(message):
         return True
 
 
-qqbot.start()
-try:
-    qqbot.send(SendMessage("group", 378320628, "AlphaBie Online"))
-    input()
-except KeyboardInterrupt:
-    pass
-finally:
-    qqbot.send(SendMessage("group", 378320628, "AlphaBie Offline"))
+if __name__ == '__main__':
+    try:
+        qqbot.start()
+        print("QQBot is running...")
+        input()
+    except KeyboardInterrupt:
+        pass
