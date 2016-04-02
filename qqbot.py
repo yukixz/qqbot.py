@@ -48,6 +48,20 @@ def reply(message, text):
 
 
 ################
+# welcome
+################
+@qqbot.handler
+def welcome(message):
+    if isinstance(message, GroupMemberIncrease):
+        welcome = SendGroupMessage(
+            group=message.group,
+            text="[CQ:at,qq={}] 欢迎来到 poi 用户讨论群。新人请发女装照一张。".format(
+                message.operatedQQ)
+            )
+        qqbot.send(welcome)
+
+
+################
 # blacklist
 ################
 BLACKLIST = []
@@ -58,6 +72,10 @@ with open('blacklist.json', 'r', encoding="utf-8") as f:
 
 @qqbot.handler
 def blacklist(message):
+    if not isinstance(message, (RcvdPrivateMessage,
+                                RcvdGroupMessage,
+                                RcvdDiscussMessage)):
+        return True
     text = message.text.lower()
     return match(text, BLACKLIST)
 
@@ -103,20 +121,6 @@ def faq(message):
         faq.triggered = now
         reply(message, send_text)
         return True
-
-
-################
-# welcome
-################
-@qqbot.handler
-def welcome(message):
-    if isinstance(message, GroupMemberIncrease):
-        welcome = SendGroupMessage(
-            group=message.group,
-            text="[CQ:at,qq={}] 欢迎来到 poi 用户讨论群".format(
-                message.operatedQQ)
-            )
-        qqbot.send(welcome)
 
 
 ################
