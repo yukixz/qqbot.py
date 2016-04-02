@@ -6,8 +6,10 @@ import time
 from collections import deque
 
 from cqbot import CQBot, \
-    RcvdPrivateMessage, RcvdGroupMessage, \
-    SendPrivateMessage, SendGroupMessage
+    RcvdPrivateMessage, SendPrivateMessage, \
+    RcvdGroupMessage, SendGroupMessage, \
+    RcvdDiscussMessage, SendDiscussMessage, \
+    GroupMemberDecrease, GroupMemberIncrease
 
 
 qqbot = CQBot(11231, 11232)
@@ -101,6 +103,20 @@ def faq(message):
         faq.triggered = now
         reply(message, send_text)
         return True
+
+
+################
+# welcome
+################
+@qqbot.handler
+def welcome(message):
+    if isinstance(message, GroupMemberIncrease):
+        welcome = SendGroupMessage(
+            group=message.group,
+            text="[CQ:at,qq={}] 欢迎来到 poi 用户讨论群".format(
+                message.operatedQQ)
+            )
+        qqbot.send(welcome)
 
 
 ################
