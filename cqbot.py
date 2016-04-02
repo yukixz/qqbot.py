@@ -95,11 +95,11 @@ class CQBot():
     def __init__(self, server_port, client_port=None):
         self.handlers = []
 
-        self.remote_addr = ("127.0.0.1", self.server_port)
+        self.remote_addr = ("127.0.0.1", server_port)
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         if client_port:
-            self.local_addr = ("127.0.0.1", self.client_port)
+            self.local_addr = ("127.0.0.1", client_port)
             self.server = APIServer(self.local_addr, APIRequestHandler)
             self.threaded_server = threading.Thread(
                 target=self.server.serve_forever
