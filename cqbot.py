@@ -15,10 +15,22 @@ SendPrivateMessage = namedtuple("SendPrivateMessage", ("qq", "text"))
 RcvdGroupMessage = namedtuple("RcvdGroupMessage", ("group", "qq", "text"))
 SendGroupMessage = namedtuple("SendGroupMessage", ("group", "text"))
 
+RcvdDiscussMessage = namedtuple("RcvdDiscussMessage",
+                                ("discuss", "qq", "text"))
+SendDiscussMessage = namedtuple("SendDiscussMessage", ("discuss", "text"))
+
+GroupMemberDecrease = namedtuple("GroupMemberDecrease",
+                                 ("group", "qq", "operatedQQ"))
+GroupMemberIncrease = namedtuple("GroupMemberIncrease",
+                                 ("group", "qq", "operatedQQ"))
+
 FrameType = namedtuple("FrameType", ("prefix", "rcvd", "send"))
 FRAME_TYPES = (
     FrameType("PrivateMessage", RcvdPrivateMessage, SendPrivateMessage),
-    FrameType("GroupMessage", RcvdGroupMessage, SendGroupMessage),
+    FrameType("GroupMessage", RcvdGroupMessage, SendDiscussMessage),
+    FrameType("DiscussMessage", RcvdDiscussMessage, SendGroupMessage),
+    FrameType("GroupMemberDecrease", GroupMemberDecrease, ()),
+    FrameType("GroupMemberIncrease", GroupMemberIncrease, ()),
 )
 
 
