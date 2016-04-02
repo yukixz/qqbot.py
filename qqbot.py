@@ -42,6 +42,11 @@ def reply(message, text):
             group=message.group,
             text=text,
             )
+    if isinstance(message, RcvdDiscussMessage):
+        reply_msg = SendDiscussMessage(
+            discuss=message.discuss,
+            text=text,
+            )
     if reply_msg:
         qqbot.send(reply_msg)
         print("↗", reply_msg)
