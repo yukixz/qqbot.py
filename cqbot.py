@@ -92,22 +92,30 @@ class APIServer(socketserver.UDPServer):
 
 
 class CQBot():
-    def __init__(self, server_port, client_port):
-        self.remote_addr = ("127.0.0.1", server_port)
-        self.local_addr = ("127.0.0.1", client_port)
+    def __init__(self, server_port, client_port=None):
         self.handlers = []
 
+        self.remote_addr = ("127.0.0.1", self.server_port)
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.server = APIServer(self.local_addr, APIRequestHandler)
-        self.threaded_server = threading.Thread(
-            target=self.server.serve_forever
-            )
-        self.threaded_server.daemon = True
+
+        if client_port:
+            self.local_addr = ("127.0.0.1", self.client_port)
+            self.server = APIServer(self.local_addr, APIRequestHandler)
+            self.threaded_server = threading.Thread(
+                target=self.server.serve_forever
+                )
+            self.threaded_server.daemon = True
+        else:
+            self.start = self._disabled
+            self.handler = self._disabled
 
     def __del__(self):
         self.client.close()
         self.server.shutdown()
         self.server.server_close()
+
+    def _disabled(self):
+        print("Client port not assigned, method disabled.", file=sys.stderr)
 
     def start(self):
         self.server.handlers = self.handlers
