@@ -1,15 +1,5 @@
 # cqbot
-QQBot using CoolQ PySocket API.
+QQBot using CoolQ Socket API.
 
 ## Deploy
-You need to place [PySocketCoolQ](https://github.com/BroncoTc/PySocketCoolQ/releases) library into CoolQ app folder.
-File hierarchy:
-```
-CoolQ/
-└── app/
-    ├── com.broncotc.cqsocketapi.dll
-    ├── com.broncotc.cqsocketapi.json
-	└── com.broncotc.cqsocketapi/
-		└── cqsocketconfig.ini
-```
-You alos need to install python dependency `circuits` with python 3.
+Place [cqsocketapi](https://github.com/yukixz/cqsocketapi/releases) library into CoolQ app folder, then run `qqbot.py`.

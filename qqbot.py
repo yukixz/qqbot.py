@@ -5,9 +5,12 @@ import random
 import time
 from collections import deque
 
-from pycoolq import coolqBot, SendMessage
+from cqbot import CQBot, \
+    RcvdPrivateMessage, RcvdGroupMessage, \
+    SendPrivateMessage, SendGroupMessage
 
-qqbot = coolqBot(py2cqPort=12451, cq2pyPort=12450)
+
+qqbot = CQBot(11231, 11232)
 
 
 def match(text, keywords):
@@ -20,22 +23,26 @@ def match(text, keywords):
 ################
 # log
 ################
-@qqbot.messageHandler()
+@qqbot.handler
 def log(message):
-    print("↘", message.sourceType,
-          message.fromGroupID, message.fromID, message.content)
+    print("↘", message)
 
 
 def reply(message, text):
-    if message.sourceType in ("group", "discuss"):
-        dest_type = message.sourceType
-        dest_id = message.fromGroupID
-    else:
-        return  # Cannot send private message
-        dest_type = "personal"
-        dest_id = message.fromID
-    qqbot.send(SendMessage(dest_type, dest_id, text))
-    print("↗", dest_type, dest_id, text)
+    reply_msg = None
+    if isinstance(message, RcvdPrivateMessage):
+        reply_msg = SendPrivateMessage(
+            qq=message.qq,
+            text=text,
+            )
+    if isinstance(message, RcvdGroupMessage):
+        reply_msg = SendGroupMessage(
+            group=message.group,
+            text=text,
+            )
+    if reply_msg:
+        qqbot.send(reply_msg)
+        print("↗", reply_msg)
 
 
 ################
@@ -47,9 +54,9 @@ with open('blacklist.json', 'r', encoding="utf-8") as f:
     BLACKLIST = json.loads(f.read())
 
 
-@qqbot.messageHandler()
+@qqbot.handler
 def blacklist(message):
-    text = message.content.lower()
+    text = message.text.lower()
     return match(text, BLACKLIST)
 
 
@@ -74,9 +81,9 @@ with open('faq.json', 'r', encoding="utf-8") as f:
         FAQ.append(FAQObject(jfaq))
 
 
-@qqbot.messageHandler()
+@qqbot.handler
 def faq(message):
-    text = message.content.lower()
+    text = message.text.lower()
     now = time.time()
     for faq in FAQ:
         if not match(text, faq.keywords):
@@ -103,9 +110,9 @@ ROLL_LOWER = 2
 ROLL_UPPER = 7000
 
 
-@qqbot.messageHandler()
+@qqbot.handler
 def roll(message):
-    texts = message.content.split()
+    texts = message.text.split()
     if not (len(texts) > 0 and texts[0] == '/roll'):
         return
 
@@ -127,8 +134,8 @@ def roll(message):
     rolls = []
     for n in ranges:
         rolls.append("{}/{}".format(random.randint(1, n), n))
-    send_text = "[roll] [CQ:at,qq={}]: {}".format(
-        message.fromID, ", ".join(rolls))
+    roll_text = ", ".join(rolls)
+    send_text = "[roll] [CQ:at,qq={}]: {}".format(message.qq, roll_text)
 
     reply(message, send_text)
     return True
@@ -150,9 +157,9 @@ class QueueMessage:
         self.repeated = False
 
 
-@qqbot.messageHandler()
+@qqbot.handler
 def repeat(message):
-    text = message.content
+    text = message.text
 
     # Find & remove matched message from queue.
     msg = None
