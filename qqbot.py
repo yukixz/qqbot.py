@@ -5,14 +5,15 @@ import random
 import time
 from collections import deque
 
+from apscheduler.schedulers.background import BackgroundScheduler
 from cqbot import CQBot, \
-    RcvdPrivateMessage, SendPrivateMessage, \
-    RcvdGroupMessage, SendGroupMessage, \
-    RcvdDiscussMessage, SendDiscussMessage, \
+    RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
+    SendPrivateMessage, SendGroupMessage, SendDiscussMessage, \
     GroupMemberDecrease, GroupMemberIncrease
 
 
 qqbot = CQBot(11231, 11232)
+scheduler = BackgroundScheduler()
 
 
 def match(text, keywords):
@@ -25,9 +26,9 @@ def match(text, keywords):
 ################
 # log
 ################
-@qqbot.handler
-def log(message):
-    print("↘", message)
+# @qqbot.handler
+# def log(message):
+#     print("↘", message)
 
 
 def reply(message, text):
@@ -214,9 +215,42 @@ def repeat(message):
         return True
 
 
+################
+# notify
+################
+@scheduler.scheduled_job('cron', hour='0', timezone='Asia/Tokyo')
+def notify_update_improvement():
+    qqbot.send(SendGroupMessage(
+        group="378320628", text="改修工厂已更新"))
+
+
+@scheduler.scheduled_job('cron', hour='5', timezone='Asia/Tokyo')
+def notify_update_quest():
+    qqbot.send(SendGroupMessage(
+        group="378320628", text="任务列表已更新"))
+
+
+@scheduler.scheduled_job('cron', hour='3,15', timezone='Asia/Tokyo')
+def notify_update_pratice_1():
+    qqbot.send(SendGroupMessage(
+        group="378320628", text="演习对手已更新"))
+
+
+@scheduler.scheduled_job('cron', hour='2,14', minute='0,30,40,50',
+                         timezone='Asia/Tokyo')
+def notify_pratice():
+    qqbot.send(SendGroupMessage(
+        group="378320628", text="演习快刷新啦、赶紧打演习啦！"))
+
+
+################
+# __main__
+################
 if __name__ == '__main__':
+    scheduler.print_jobs()
     try:
         qqbot.start()
+        scheduler.start()
         print("QQBot is running...")
         input()
     except KeyboardInterrupt:
