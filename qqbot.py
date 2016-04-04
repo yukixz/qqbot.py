@@ -26,7 +26,7 @@ def match(text, keywords):
 ################
 # log
 ################
-# @qqbot.handler
+# @qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 # def log(message):
 #     print("↘", message)
 
@@ -54,20 +54,6 @@ def reply(message, text):
 
 
 ################
-# welcome
-################
-@qqbot.handler
-def welcome(message):
-    if isinstance(message, GroupMemberIncrease):
-        welcome = SendGroupMessage(
-            group=message.group,
-            text="[CQ:at,qq={}] 欢迎来到 poi 用户讨论群。新人请发女装照一张。".format(
-                message.operatedQQ)
-            )
-        qqbot.send(welcome)
-
-
-################
 # blacklist
 ################
 BLACKLIST = []
@@ -76,12 +62,8 @@ with open('blacklist.json', 'r', encoding="utf-8") as f:
     BLACKLIST = json.loads(f.read())
 
 
-@qqbot.handler
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 def blacklist(message):
-    if not isinstance(message, (RcvdPrivateMessage,
-                                RcvdGroupMessage,
-                                RcvdDiscussMessage)):
-        return True
     text = message.text.lower()
     return match(text, BLACKLIST)
 
@@ -107,7 +89,7 @@ with open('faq.json', 'r', encoding="utf-8") as f:
         FAQ.append(FAQObject(jfaq))
 
 
-@qqbot.handler
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 def faq(message):
     text = message.text.lower()
     now = time.time()
@@ -136,7 +118,7 @@ ROLL_LOWER = 2
 ROLL_UPPER = 7000
 
 
-@qqbot.handler
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 def roll(message):
     texts = message.text.split()
     if not (len(texts) > 0 and texts[0] == '/roll'):
@@ -183,7 +165,7 @@ class QueueMessage:
         self.repeated = False
 
 
-@qqbot.handler
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 def repeat(message):
     text = message.text
 
@@ -213,6 +195,19 @@ def repeat(message):
         reply(message, msg.text)
         msg.repeated = True
         return True
+
+
+################
+# welcome
+################
+@qqbot.listener((GroupMemberIncrease, ))
+def welcome(message):
+    welcome = SendGroupMessage(
+        group=message.group,
+        text="[CQ:at,qq={}] 欢迎来到 poi 用户讨论群。新人请发女装照一张。".format(
+            message.operatedQQ)
+        )
+    qqbot.send(welcome)
 
 
 ################

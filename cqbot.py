@@ -70,6 +70,12 @@ def dump_frame(frame):
     return data
 
 
+class FrameListener():
+    def __init__(self, handler, frame_type):
+        self.handler = handler
+        self.frame_type = frame_type
+
+
 class APIRequestHandler(socketserver.BaseRequestHandler):
     def handle(self):
         data = self.request[0].decode()
@@ -79,21 +85,22 @@ class APIRequestHandler(socketserver.BaseRequestHandler):
         if message is None:
             print("Unknown message", parts, file=sys.stderr)
 
-        for handler in self.server.handlers:
+        for listener in self.server.listeners:
             try:
-                if handler(message):
+                if (isinstance(message, listener.frame_type) and
+                        listener.handler(message)):
                     break
             except:
                 traceback.print_exc()
 
 
 class APIServer(socketserver.UDPServer):
-    handlers = []
+    listeners = []
 
 
 class CQBot():
     def __init__(self, server_port, client_port=None):
-        self.handlers = []
+        self.listeners = []
 
         self.remote_addr = ("127.0.0.1", server_port)
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -107,7 +114,7 @@ class CQBot():
             self.threaded_server.daemon = True
         else:
             self.start = self._disabled
-            self.handler = self._disabled
+            self.listener = self._disabled
 
     def __del__(self):
         self.client.close()
@@ -118,12 +125,13 @@ class CQBot():
         print("Client port not assigned, method disabled.", file=sys.stderr)
 
     def start(self):
-        self.server.handlers = self.handlers
+        self.server.listeners = self.listeners
         self.threaded_server.start()
 
-    def handler(self, handler):
-        self.handlers.append(handler)
-        return handler
+    def listener(self, frame_type):
+        def decorator(handler):
+            self.listeners.append(FrameListener(handler, frame_type))
+        return decorator
 
     def send(self, message):
         data = dump_frame(message).encode()
@@ -134,10 +142,9 @@ if __name__ == '__main__':
     try:
         qqbot = CQBot(11231, 11232)
 
-        @qqbot.handler
+        @qqbot.listener((RcvdPrivateMessage, ))
         def log(message):
-            if isinstance(message, (RcvdPrivateMessage, RcvdGroupMessage)):
-                print(message)
+            print(message)
 
         qqbot.start()
         print("QQBot is running...")
