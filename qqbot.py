@@ -23,14 +23,6 @@ def match(text, keywords):
     return False
 
 
-################
-# log
-################
-# @qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
-# def log(message):
-#     print("↘", message)
-
-
 def reply(message, text):
     reply_msg = None
     if isinstance(message, RcvdPrivateMessage):

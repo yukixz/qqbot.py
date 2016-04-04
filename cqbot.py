@@ -27,8 +27,8 @@ GroupMemberIncrease = namedtuple("GroupMemberIncrease",
 FrameType = namedtuple("FrameType", ("prefix", "rcvd", "send"))
 FRAME_TYPES = (
     FrameType("PrivateMessage", RcvdPrivateMessage, SendPrivateMessage),
-    FrameType("GroupMessage", RcvdGroupMessage, SendDiscussMessage),
-    FrameType("DiscussMessage", RcvdDiscussMessage, SendGroupMessage),
+    FrameType("GroupMessage", RcvdGroupMessage, SendGroupMessage),
+    FrameType("DiscussMessage", RcvdDiscussMessage, SendDiscussMessage),
     FrameType("GroupMemberDecrease", GroupMemberDecrease, ()),
     FrameType("GroupMemberIncrease", GroupMemberIncrease, ()),
 )
@@ -48,7 +48,8 @@ def load_frame(data):
         if prefix == type_.prefix:
             frame = type_.rcvd(*payload)
     # decode text
-    if isinstance(frame, (RcvdPrivateMessage, RcvdGroupMessage)):
+    if isinstance(frame,
+                  (RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage)):
         payload[-1] = b64decode(payload[-1]).decode('gbk')
         frame = type(frame)(*payload)
     return frame
@@ -62,7 +63,8 @@ def dump_frame(frame):
 
     data = None
     # encode text
-    if isinstance(frame, (SendPrivateMessage, SendGroupMessage)):
+    if isinstance(frame,
+                  (SendPrivateMessage, SendGroupMessage, SendDiscussMessage)):
         payload[-1] = b64encode(payload[-1].encode('gbk')).decode()
     for type_ in FRAME_TYPES:
         if isinstance(frame, type_.send):
@@ -108,25 +110,25 @@ class CQBot():
         if client_port:
             self.local_addr = ("127.0.0.1", client_port)
             self.server = APIServer(self.local_addr, APIRequestHandler)
-            self.threaded_server = threading.Thread(
-                target=self.server.serve_forever
-                )
-            self.threaded_server.daemon = True
         else:
-            self.start = self._disabled
-            self.listener = self._disabled
+            self.local_addr = None
+            self.server = None
 
     def __del__(self):
         self.client.close()
-        self.server.shutdown()
-        self.server.server_close()
-
-    def _disabled(self):
-        print("Client port not assigned, method disabled.", file=sys.stderr)
+        if self.server:
+            self.server.shutdown()
+            self.server.server_close()
 
     def start(self):
-        self.server.listeners = self.listeners
-        self.threaded_server.start()
+        if self.server:
+            self.server.listeners = self.listeners
+            self.threaded_server = threading.Thread(
+                target=self.server.serve_forever)
+            self.threaded_server.daemon = True
+            self.threaded_server.start()
+        else:
+            print("Server is not available.", file=sys.stderr)
 
     def listener(self, frame_type):
         def decorator(handler):

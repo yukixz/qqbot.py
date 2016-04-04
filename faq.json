@@ -1,12 +1,17 @@
 [
   {
-    "keywords": ["下载"],
+    "keywords": ["下载", "哪里下"],
     "message": "poi 下载地址\n百度网盘：https://0u0.moe/poi\nGithub: https://github.com/poooi/poi/releases"
   },
   {
     "keywords": ["版本", "最新版", "稳定版"],
     "whitelist": ["qq"],
-    "message": "poi 最新稳定版：6.0.1（请更新所有插件）\npoi 最新测试版：-\n测试版可能存在 bug，请谨慎使用"
+    "message": "poi 最新稳定版：6.1.3\npoi 最新测试版：-\n测试版可能存在 bug，请谨慎使用"
+  },
+  {
+    "keywords": ["vip"],
+    "whitelist": ["qq"],
+    "message": "在插件设置中安装「poi-plugin-vip」即可开启 poi 炫彩 VIP 版，你值得拥有！"
   },
   {
     "keywords": ["掉落", "掉率", "哪里掉"],
@@ -19,7 +24,7 @@
   {
     "keywords": ["白屏"],
     "whitelist": ["不", "没", "还"],
-    "message": "poi 白屏请先检查：\n1. poi 的代理设置是否正确\n2. poi 的主页是否不是 about:blank\n若仍有问题，请提供以下信息：\n1. poi 的版本号是什么？\n2. 用的是什么代理？\n3. poi 能否打开百度？"
+    "message": "poi 白屏请先检查：\n1. poi 的代理设置是否正确\n2. poi 的主页是否不是 about:blank\n\n若仍有问题，请提供以下信息：\n1. poi 的版本号是什么？\n2. 用的是什么代理？\n3. poi 能否打开百度？\n4. 使用其他浏览器能否正常打开游戏"
   },
   {
     "keywords": ["窗口大小"],
@@ -48,6 +53,12 @@
     "message": ["天下皆欧 唯你独非", "氪不改命 玄不救非", "天赋欧颜 逢赌必出"],
     "interval": 4,
     "notify": false
+  },
+  {
+    "keywords": ["复读", "人类本质", "人类的本质"],
+    "whitelist": ["复读机"],
+    "message": "人类的本质只是个复读机",
+    "interval": 20
   },
   {
     "keywords": ["早安", "早上好", "小鳖早"],
