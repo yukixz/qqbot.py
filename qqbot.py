@@ -13,7 +13,10 @@ from cqbot import CQBot, \
 
 
 qqbot = CQBot(11231, 11232)
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(
+    timezone='Asia/Tokyo',
+    job_defaults={'misfire_grace_time': 60},
+    )
 
 
 def match(text, keywords):
@@ -42,6 +45,7 @@ def reply(message, text):
             )
     if reply_msg:
         qqbot.send(reply_msg)
+        print("↘", message)
         print("↗", reply_msg)
 
 
@@ -154,12 +158,14 @@ class QueueMessage:
     def __init__(self, text):
         self.text = text
         self.count = 0
+        self.senders = set()
         self.repeated = False
 
 
 @qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 def repeat(message):
     text = message.text
+    sender = message.qq
 
     # Find & remove matched message from queue.
     msg = None
@@ -172,7 +178,8 @@ def repeat(message):
     # Increase message count
     if msg is None:
         msg = QueueMessage(text)
-    msg.count += 1
+    msg.senders.add(sender)
+    msg.count = len(msg.senders)
 
     # Push message back to queue
     queue.appendleft(msg)
@@ -180,10 +187,9 @@ def repeat(message):
         queue.pop()
 
     # Repeat message
-    if msg.repeated:
-        return False
-    if REPEAT_COUNT_MIN <= msg.count <= REPEAT_COUNT_MAX and \
-            random.randint(1, REPEAT_COUNT_MAX - msg.count + 1) == 1:
+    if msg.repeated or msg.count < REPEAT_COUNT_MIN:
+        return
+    if random.randint(1, REPEAT_COUNT_MAX - msg.count + 1) == 1:
         reply(message, msg.text)
         msg.repeated = True
         return True
@@ -205,39 +211,44 @@ def welcome(message):
 ################
 # notify
 ################
-@scheduler.scheduled_job('cron', hour='0', timezone='Asia/Tokyo')
+@scheduler.scheduled_job('cron', hour='0')
 def notify_update_improvement():
     qqbot.send(SendGroupMessage(
         group="378320628", text="改修工厂已更新"))
 
 
-@scheduler.scheduled_job('cron', hour='5', timezone='Asia/Tokyo')
+@scheduler.scheduled_job('cron', hour='5')
 def notify_update_quest():
     qqbot.send(SendGroupMessage(
         group="378320628", text="任务列表已更新"))
 
 
-@scheduler.scheduled_job('cron', hour='3,15', timezone='Asia/Tokyo')
+@scheduler.scheduled_job('cron', hour='3,15')
 def notify_update_pratice_1():
     qqbot.send(SendGroupMessage(
         group="378320628", text="演习对手已更新"))
 
 
-@scheduler.scheduled_job('cron', hour='2,14', minute='0,30,40,50',
-                         timezone='Asia/Tokyo')
+@scheduler.scheduled_job('cron', hour='2,14', minute='0,30,40,50')
 def notify_pratice():
     qqbot.send(SendGroupMessage(
         group="378320628", text="演习快刷新啦、赶紧打演习啦！"))
+
+# from datetime import datetime
+# @scheduler.scheduled_job('cron', hour='15', minute='*')
+# def notify_test():
+#     print(datetime.now())
 
 
 ################
 # __main__
 ################
 if __name__ == '__main__':
-    scheduler.print_jobs()
     try:
         qqbot.start()
         scheduler.start()
+
+        # scheduler.print_jobs()
         print("QQBot is running...")
         input()
     except KeyboardInterrupt:
