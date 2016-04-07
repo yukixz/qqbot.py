@@ -4,10 +4,13 @@ import socket
 import socketserver
 import sys
 import threading
+import time
 import traceback
 from base64 import b64encode, b64decode
 from collections import namedtuple
 
+
+ClientHello = namedtuple("ClientHello", ("port"))
 
 RcvdPrivateMessage = namedtuple("RcvdPrivateMessage", ("qq", "text"))
 SendPrivateMessage = namedtuple("SendPrivateMessage", ("qq", "text"))
@@ -26,6 +29,7 @@ GroupMemberIncrease = namedtuple("GroupMemberIncrease",
 
 FrameType = namedtuple("FrameType", ("prefix", "rcvd", "send"))
 FRAME_TYPES = (
+    FrameType("ClientHello", (), ClientHello),
     FrameType("PrivateMessage", RcvdPrivateMessage, SendPrivateMessage),
     FrameType("GroupMessage", RcvdGroupMessage, SendGroupMessage),
     FrameType("DiscussMessage", RcvdDiscussMessage, SendDiscussMessage),
@@ -56,16 +60,18 @@ def load_frame(data):
 
 
 def dump_frame(frame):
-    if isinstance(frame, tuple):
-        payload = list(frame)
-    else:
+    if not isinstance(frame, (tuple, list)):
         raise TypeError()
 
-    data = None
+    # Cast all payload fields to string
+    payload = list(map(lambda x: str(x), frame))
+
     # encode text
     if isinstance(frame,
                   (SendPrivateMessage, SendGroupMessage, SendDiscussMessage)):
         payload[-1] = b64encode(payload[-1].encode('gbk')).decode()
+
+    data = None
     for type_ in FRAME_TYPES:
         if isinstance(frame, type_.send):
             data = " ".join((type_.prefix, *payload))
@@ -83,9 +89,13 @@ class APIRequestHandler(socketserver.BaseRequestHandler):
         data = self.request[0].decode()
         parts = data.split()
 
-        message = load_frame(parts)
+        try:
+            message = load_frame(parts)
+        except:
+            message = None
         if message is None:
             print("Unknown message", parts, file=sys.stderr)
+            return
 
         for listener in self.server.listeners:
             try:
@@ -101,34 +111,37 @@ class APIServer(socketserver.UDPServer):
 
 
 class CQBot():
-    def __init__(self, server_port, client_port=None):
+    def __init__(self, server_port, client_port=0):
         self.listeners = []
 
         self.remote_addr = ("127.0.0.1", server_port)
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        if client_port:
-            self.local_addr = ("127.0.0.1", client_port)
-            self.server = APIServer(self.local_addr, APIRequestHandler)
-        else:
-            self.local_addr = None
-            self.server = None
+        self.local_addr = ("127.0.0.1", client_port)
+        self.server = APIServer(self.local_addr, APIRequestHandler)
 
     def __del__(self):
         self.client.close()
-        if self.server:
-            self.server.shutdown()
-            self.server.server_close()
+        self.server.shutdown()
+        self.server.server_close()
 
     def start(self):
-        if self.server:
-            self.server.listeners = self.listeners
-            self.threaded_server = threading.Thread(
-                target=self.server.serve_forever)
-            self.threaded_server.daemon = True
-            self.threaded_server.start()
-        else:
-            print("Server is not available.", file=sys.stderr)
+        self.server.listeners = self.listeners
+        threaded_server = threading.Thread(
+            target=self.server.serve_forever,
+            daemon=True)
+        threaded_server.start()
+
+        threaded_keepalive = threading.Thread(
+            target=self.server_keepalive,
+            daemon=True)
+        threaded_keepalive.start()
+
+    def server_keepalive(self):
+        while True:
+            host, port = self.server.server_address
+            self.send(ClientHello(port))
+            time.sleep(120)
 
     def listener(self, frame_type):
         def decorator(handler):
@@ -142,7 +155,7 @@ class CQBot():
 
 if __name__ == '__main__':
     try:
-        qqbot = CQBot(11231, 11232)
+        qqbot = CQBot(11235)
 
         @qqbot.listener((RcvdPrivateMessage, ))
         def log(message):

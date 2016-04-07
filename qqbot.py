@@ -12,7 +12,7 @@ from cqbot import CQBot, \
     GroupMemberDecrease, GroupMemberIncrease
 
 
-qqbot = CQBot(11231, 11232)
+qqbot = CQBot(11235)
 scheduler = BackgroundScheduler(
     timezone='Asia/Tokyo',
     job_defaults={'misfire_grace_time': 60},
