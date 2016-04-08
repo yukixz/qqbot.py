@@ -112,6 +112,8 @@ def faq(message):
 ################
 ROLL_LOWER = 2
 ROLL_UPPER = 7000
+ROLL_SEPARATOR = ','
+ROLL_HELP = "[roll] 有效范围为 {} ~ {}".format(ROLL_LOWER, ROLL_UPPER)
 
 
 @qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
@@ -121,23 +123,35 @@ def roll(message):
         return
 
     ranges = []
-    for text in texts[1:5]:
+    for text in texts[1:6]:
+        # /roll 100
         try:
             n = int(text)
+            if ROLL_LOWER <= n <= ROLL_UPPER:
+                ranges.append(n)
+            else:
+                reply(message, ROLL_HELP)
+                return True
+            continue
         except:
-            break
-        if ROLL_LOWER <= n <= ROLL_UPPER:
+            pass
+        # /roll 1,20,100
+        if ROLL_SEPARATOR in text:
+            n = text.split(',')
             ranges.append(n)
-        else:
-            reply(message,
-                  "[roll] 有效范围为 {} ~ {}".format(ROLL_LOWER, ROLL_UPPER))
-            return True
+            continue
+        # else
+        break
     if len(ranges) == 0:
         ranges = [100]
 
     rolls = []
     for n in ranges:
-        rolls.append("{}/{}".format(random.randint(1, n), n))
+        if isinstance(n, int):
+            rolls.append("{}/{}".format(random.randint(1, n), n))
+        if isinstance(n, (list, tuple)):
+            rolls.append("{}/{}".format(random.choice(n),
+                                        ROLL_SEPARATOR.join(n)))
     roll_text = ", ".join(rolls)
     send_text = "[roll] [CQ:at,qq={}]: {}".format(message.qq, roll_text)
 
