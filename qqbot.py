@@ -59,16 +59,23 @@ def log_message(message):
 ################
 # blacklist
 ################
-BLACKLIST = []
+BLACKLIST_KEYWORDS = []
+BLACKLIST_USERS = []
 
 with open('blacklist.json', 'r', encoding="utf-8") as f:
-    BLACKLIST = json.loads(f.read())
+    data = json.loads(f.read())
+    BLACKLIST_KEYWORDS = data.get("keywords", [])
+    BLACKLIST_USERS = data.get("users", [])
 
 
 @qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 def blacklist(message):
-    text = message.text.lower()
-    return match(text, BLACKLIST)
+    if match(message.text.lower(), BLACKLIST_KEYWORDS):
+        return True
+    if message.qq in BLACKLIST_USERS:
+        return True
+    # else
+    return False
 
 
 ################
@@ -183,7 +190,7 @@ class QueueMessage:
         self.repeated = False
 
 
-# @qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 def repeat(message):
     text = message.text
     sender = message.qq
