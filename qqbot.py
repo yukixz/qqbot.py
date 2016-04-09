@@ -8,7 +8,7 @@ from datetime import datetime
 
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
-from cqbot import CQBot, \
+from cqbot import CQBot, RE_CQ_SPECIAL, \
     RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
     SendPrivateMessage, SendGroupMessage, SendDiscussMessage, \
     GroupMemberDecrease, GroupMemberIncrease
@@ -135,6 +135,7 @@ def roll(message):
     texts = message.text.split()
     if not (len(texts) > 0 and texts[0] == '/roll'):
         return
+    texts = RE_CQ_SPECIAL.sub('', message.text).split()
 
     ranges = []
     for text in texts[1:6]:

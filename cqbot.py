@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 import socket
 import socketserver
 import sys
@@ -36,6 +37,8 @@ FRAME_TYPES = (
     FrameType("GroupMemberDecrease", GroupMemberDecrease, ()),
     FrameType("GroupMemberIncrease", GroupMemberIncrease, ()),
 )
+
+RE_CQ_SPECIAL = re.compile(r'\[CQ:\w+(,.+?)?\]')
 
 
 def load_frame(data):
