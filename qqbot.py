@@ -4,7 +4,9 @@ import json
 import random
 import time
 from collections import deque
+from datetime import datetime
 
+import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from cqbot import CQBot, \
     RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
@@ -47,6 +49,11 @@ def reply(message, text):
         qqbot.send(reply_msg)
         print("↘", message)
         print("↗", reply_msg)
+
+
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
+def log_message(message):
+    print(message)
 
 
 ################
@@ -176,7 +183,7 @@ class QueueMessage:
         self.repeated = False
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
+# @qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
 def repeat(message):
     text = message.text
     sender = message.qq
@@ -225,33 +232,24 @@ def welcome(message):
 ################
 # notify
 ################
-@scheduler.scheduled_job('cron', hour='0')
-def notify_update_improvement():
-    qqbot.send(SendGroupMessage(
-        group="378320628", text="改修工厂已更新"))
+NOTIFY_HOURLY = {}
+
+with open('notify.json', 'r', encoding="utf-8") as f:
+    NOTIFY_HOURLY = json.loads(f.read())
 
 
-@scheduler.scheduled_job('cron', hour='5')
-def notify_update_quest():
-    qqbot.send(SendGroupMessage(
-        group="378320628", text="任务列表已更新"))
-
-
-@scheduler.scheduled_job('cron', hour='3,15')
-def notify_update_pratice_1():
-    qqbot.send(SendGroupMessage(
-        group="378320628", text="演习对手已更新"))
+@scheduler.scheduled_job('cron', hour='*')
+def notify_hourly():
+    hour = str(datetime.now(pytz.timezone("Asia/Tokyo")).hour)
+    text = NOTIFY_HOURLY.get(hour, None)
+    if text:
+        qqbot.send(SendGroupMessage(group="378320628", text=text))
 
 
 @scheduler.scheduled_job('cron', hour='2,14', minute='0,30,40,50')
 def notify_pratice():
     qqbot.send(SendGroupMessage(
         group="378320628", text="演习快刷新啦、赶紧打演习啦！"))
-
-# from datetime import datetime
-# @scheduler.scheduled_job('cron', hour='15', minute='*')
-# def notify_test():
-#     print(datetime.now())
 
 
 ################
