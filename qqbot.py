@@ -51,11 +51,6 @@ def reply(message, text):
         print("↗", reply_msg)
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
-def log_message(message):
-    print(message)
-
-
 ################
 # blacklist
 ################
