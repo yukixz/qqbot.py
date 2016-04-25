@@ -2,4 +2,6 @@
 QQBot using CoolQ Socket API.
 
 ## Deploy
-Place [cqsocketapi](https://github.com/yukixz/cqsocketapi/releases) library into CoolQ app folder, then run `qqbot.py`.
+1. Install [cqsocketapi](https://github.com/yukixz/cqsocketapi/releases) on CoolQ.
+2. Install dependencies `pip install -r requirements.txt`.
+3. Run `qqbot.py` with Python 3.4+.
