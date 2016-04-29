@@ -1,18 +1,24 @@
+#!/usr/bin/env python3
 # coding: UTF-8
 
 import json
 import random
+import re
 import time
 from collections import deque
 from datetime import datetime
+from urllib.parse import unquote
 
 import pytz
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from cqbot import CQBot, RE_CQ_SPECIAL, \
     RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
     SendPrivateMessage, SendGroupMessage, SendDiscussMessage, \
     GroupMemberDecrease, GroupMemberIncrease
 
+
+POI_GROUP = '378320628'
 
 qqbot = CQBot(11235)
 scheduler = BackgroundScheduler(
@@ -246,13 +252,57 @@ def notify_hourly():
     hour = str(datetime.now(pytz.timezone("Asia/Tokyo")).hour)
     text = NOTIFY_HOURLY.get(hour, None)
     if text:
-        qqbot.send(SendGroupMessage(group="378320628", text=text))
+        qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
 
 
 @scheduler.scheduled_job('cron', hour='2,14', minute='0,30,40,50')
 def notify_pratice():
     qqbot.send(SendGroupMessage(
-        group="378320628", text="演习快刷新啦、赶紧打演习啦！"))
+        group=POI_GROUP, text="演习快刷新啦、赶紧打演习啦！"))
+
+
+################
+# Twitter (using kcwiki)
+################
+TWEETS = {1: 1}
+TWEET_URL = 'http://dev.kcwiki.moe/JKancolle/tweet.do?count=10'
+TWEET_KEYS = ('ja', 'zh')
+
+
+@scheduler.scheduled_job('cron', minute='*', second='42')
+def twitter_kcwiki():
+    response = requests.get(TWEET_URL)
+    tweets = response.json().get('data', {}).get('tweet', [])
+
+    if TWEETS:  # is not empty
+        for tweet in tweets:
+            id_ = tweet['Id']
+            keys = []
+            texts = []
+            texts.append('\n'.join(["「艦これ」開発/運営", tweet['date']]))
+            for k in TWEET_KEYS:
+                if k in tweet:
+                    keys.append(k)
+                    text = unquote(tweet[k]).replace('+', ' ').strip()
+                    text = re.sub(r'<br */>', '', text)
+                    text = re.sub(r'<a.*?href="(.+?)".*?>.*?</a>', r'\1', text)
+                    texts.append(text)
+
+            key = '-'.join(keys)
+            if TWEETS.get(id_) != key:
+                TWEETS[id_] = key
+                text = '\n\n'.join(texts)
+                qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
+
+    else:       # is empty
+        for tweet in tweets:
+            id_ = tweet['Id']
+            keys = []
+            for k in TWEET_KEYS:
+                if k in tweet:
+                    keys.append(k)
+            key = '-'.join(keys)
+            TWEETS[id_] = key
 
 
 ################
