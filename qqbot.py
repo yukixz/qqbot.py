@@ -5,9 +5,9 @@ import json
 import random
 import re
 import time
+import traceback
 from collections import deque
 from datetime import datetime
-from urllib.parse import unquote
 
 import pytz
 import requests
@@ -262,46 +262,39 @@ def notify_pratice():
 
 
 ################
-# Twitter (using kcwiki)
+# twitter
 ################
-TWEETS = {1: 1}
-TWEET_URL = 'http://dev.kcwiki.moe/JKancolle/tweet.do?count=10'
-TWEET_KEYS = ('ja', 'zh')
+TWEETS = {}
+TWEET_URL = 'http://t.kcwiki.moe/?json=1&count=10'
+TWEET_RE_HTML = re.compile(r'<\w+.*?>|</\w+>')
 
 
 @scheduler.scheduled_job('cron', minute='*', second='42')
 def twitter_kcwiki():
     response = requests.get(TWEET_URL)
-    tweets = response.json().get('data', {}).get('tweet', [])
+    posts = response.json().get('posts', [])
 
     if TWEETS:  # is not empty
-        for tweet in tweets:
-            id_ = tweet['Id']
-            keys = []
-            texts = []
-            texts.append('\n'.join(["「艦これ」開発/運営", tweet['date']]))
-            for k in TWEET_KEYS:
-                if k in tweet:
-                    keys.append(k)
-                    text = unquote(tweet[k]).replace('+', ' ').strip()
-                    text = re.sub(r'<br */>', '', text)
-                    text = re.sub(r'<a.*?href="(.+?)".*?>.*?</a>', r'\1', text)
-                    texts.append(text)
+        for post in posts:
+            try:
+                id_ = post['id']
+                key = len(post['content'])
+                date = post['date']
+                text = TWEET_RE_HTML.sub('', post['content'])
+                # HACK: Fix gbk encoding
+                text = text.replace('・', '·')
 
-            key = '-'.join(keys)
-            if TWEETS.get(id_) != key:
-                TWEETS[id_] = key
-                text = '\n\n'.join(texts)
-                qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
+                if TWEETS.get(id_) != key:
+                    TWEETS[id_] = key
+                    text = '\n'.join(["「艦これ」開発/運営", date, '', text])
+                    qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
+            except:
+                traceback.print_exc()
 
-    else:       # is empty
-        for tweet in tweets:
-            id_ = tweet['Id']
-            keys = []
-            for k in TWEET_KEYS:
-                if k in tweet:
-                    keys.append(k)
-            key = '-'.join(keys)
+    else:
+        for post in posts:
+            id_ = post['id']
+            key = len(post['content'])
             TWEETS[id_] = key
 
 
