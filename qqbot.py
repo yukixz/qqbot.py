@@ -273,6 +273,7 @@ TWEET_RE_HTML = re.compile(r'<\w+.*?>|</\w+>')
 def twitter_kcwiki():
     response = requests.get(TWEET_URL)
     posts = response.json().get('posts', [])
+    posts.reverse()
 
     if TWEETS:  # is not empty
         for post in posts:
