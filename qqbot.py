@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # coding: UTF-8
 
+import html
 import json
 import random
 import re
@@ -282,6 +283,7 @@ def twitter_kcwiki():
                 key = len(post['content'])
                 date = post['date']
                 text = TWEET_RE_HTML.sub('', post['content'])
+                text = html.unescape(text)
                 # HACK: Fix gbk encoding
                 text = text.replace('・', '·')
 
@@ -289,6 +291,7 @@ def twitter_kcwiki():
                     TWEETS[id_] = key
                     text = '\n'.join(["「艦これ」開発/運営", date, '', text])
                     qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
+                    qqbot.send(SendPrivateMessage(qq='412632991', text=text))
             except:
                 traceback.print_exc()
 
