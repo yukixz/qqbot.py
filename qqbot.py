@@ -19,13 +19,13 @@ from cqbot import CQBot, RE_CQ_SPECIAL, \
     GroupMemberDecrease, GroupMemberIncrease
 
 
-POI_GROUP = '378320628'
-
 qqbot = CQBot(11235)
 scheduler = BackgroundScheduler(
     timezone='Asia/Tokyo',
     job_defaults={'misfire_grace_time': 60},
     )
+
+POI_GROUP = '378320628'
 
 
 def match(text, keywords):
@@ -59,6 +59,15 @@ def reply(message, text):
 
 
 ################
+# debug
+################
+@qqbot.listener((RcvdPrivateMessage))
+def debug(message):
+    if message.text.lower() == '/debug':
+        return True
+
+
+################
 # blacklist
 ################
 BLACKLIST_KEYWORDS = []
@@ -70,8 +79,13 @@ with open('blacklist.json', 'r', encoding="utf-8") as f:
     BLACKLIST_USERS = data.get("users", [])
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage,
+                 GroupMemberIncrease))
 def blacklist(message):
+    # Restrict to Poi group
+    if isinstance(message, (RcvdGroupMessage, GroupMemberIncrease)) and \
+            message.group != POI_GROUP:
+        return True
     if match(message.text.lower(), BLACKLIST_KEYWORDS):
         return True
     if message.qq in BLACKLIST_USERS:
@@ -290,8 +304,9 @@ def twitter_kcwiki():
                 if TWEETS.get(id_) != key:
                     TWEETS[id_] = key
                     text = '\n'.join(["「艦これ」開発/運営", date, '', text])
-                    qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
                     qqbot.send(SendPrivateMessage(qq='412632991', text=text))
+                    qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
+                    qqbot.send(SendGroupMessage(group='489722633', text=text))
             except:
                 traceback.print_exc()
 

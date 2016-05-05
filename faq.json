@@ -6,7 +6,7 @@
   {
     "keywords": ["版本", "最新版", "稳定版"],
     "whitelist": ["qq"],
-    "message": "poi 最新稳定版：6.1.3\npoi 最新测试版：6.2.0-beta.0\n测试版可能存在 bug，请谨慎使用"
+    "message": "poi 最新稳定版：6.1.3\npoi 最新测试版：6.2.0-beta.1\n测试版可能存在 bug，请谨慎使用"
   },
   {
     "keywords": ["vip"],
@@ -77,5 +77,10 @@
     "keywords": ["晚安", "好梦"],
     "message": "晚安",
     "interval": 4
+  },
+  {
+  "keywords": ["性暗示"],
+  "message": "[CQ:image,file=B5C83ED9F87A5344FFD1E1307A9DD796.jpg]",
+  "interval": 60
   }
 ]
