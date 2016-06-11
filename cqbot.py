@@ -41,6 +41,14 @@ FRAME_TYPES = (
 RE_CQ_SPECIAL = re.compile(r'\[CQ:\w+(,.+?)?\]')
 
 
+class CQAt:
+    def __init__(self, qq):
+        self.qq = qq
+
+    def __str__(self):
+        return "[CQ:at,qq={}]".format(self.qq)
+
+
 def load_frame(data):
     if isinstance(data, str):
         parts = data.split()

@@ -8,15 +8,16 @@ import re
 import time
 import traceback
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from cqbot import CQBot, RE_CQ_SPECIAL, \
+from cqbot import CQBot, \
     RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
     SendPrivateMessage, SendGroupMessage, SendDiscussMessage, \
-    GroupMemberDecrease, GroupMemberIncrease
+    GroupMemberDecrease, GroupMemberIncrease, \
+    RE_CQ_SPECIAL, CQAt
 
 
 qqbot = CQBot(11235)
@@ -61,10 +62,10 @@ def reply(message, text):
 ################
 # debug
 ################
-@qqbot.listener((RcvdPrivateMessage))
+@qqbot.listener((RcvdPrivateMessage, ))
 def debug(message):
-    if message.text.lower() == '/debug':
-        return True
+    if message.qq == '412632991':
+        print('DEBUG', message)
 
 
 ################
@@ -80,11 +81,12 @@ with open('blacklist.json', 'r', encoding="utf-8") as f:
 
 
 @qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage,
-                 GroupMemberIncrease))
+                 GroupMemberIncrease, GroupMemberDecrease))
 def blacklist(message):
     # Restrict to Poi group
-    if isinstance(message, (RcvdGroupMessage, GroupMemberIncrease)) and \
-            message.group != POI_GROUP:
+    if isinstance(message, (GroupMemberIncrease, GroupMemberDecrease)):
+        return message.group != POI_GROUP
+    if isinstance(message, RcvdGroupMessage) and message.group != POI_GROUP:
         return True
     if match(message.text.lower(), BLACKLIST_KEYWORDS):
         return True
@@ -241,16 +243,24 @@ def repeat(message):
 
 
 ################
-# welcome
+# Join & Leave
 ################
 @qqbot.listener((GroupMemberIncrease, ))
-def welcome(message):
-    welcome = SendGroupMessage(
+def join(message):
+    qqbot.send(SendGroupMessage(
         group=message.group,
-        text="[CQ:at,qq={}] 欢迎来到 poi 用户讨论群。新人请发女装照一张。".format(
-            message.operatedQQ)
-        )
-    qqbot.send(welcome)
+        text="{} 欢迎来到 poi 用户讨论群。新人请发女装照一张。".format(
+            CQAt(message.operatedQQ))
+    ))
+
+
+# @qqbot.listener((GroupMemberDecrease, ))
+# def leave(message):
+#     qqbot.send(SendGroupMessage(
+#         group=message.group,
+#         text="{} 畏罪潜逃了".format(
+#             CQAt(message.operatedQQ))
+#     ))
 
 
 ################
@@ -282,31 +292,40 @@ def notify_pratice():
 TWEETS = {}
 TWEET_URL = 'http://t.kcwiki.moe/?json=1&count=10'
 TWEET_RE_HTML = re.compile(r'<\w+.*?>|</\w+>')
+TWEET_MAX_BEFORE = timedelta(hours=12)
 
 
 @scheduler.scheduled_job('cron', minute='*', second='42')
 def twitter_kcwiki():
-    response = requests.get(TWEET_URL)
+    response = requests.get(TWEET_URL, timeout=20)
     posts = response.json().get('posts', [])
     posts.reverse()
+    now = datetime.now()
 
     if TWEETS:  # is not empty
         for post in posts:
             try:
                 id_ = post['id']
                 key = len(post['content'])
-                date = post['date']
-                text = TWEET_RE_HTML.sub('', post['content'])
-                text = html.unescape(text)
-                # HACK: Fix gbk encoding
-                text = text.replace('・', '·')
 
-                if TWEETS.get(id_) != key:
-                    TWEETS[id_] = key
-                    text = '\n'.join(["「艦これ」開発/運営", date, '', text])
-                    qqbot.send(SendPrivateMessage(qq='412632991', text=text))
-                    qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
-                    qqbot.send(SendGroupMessage(group='489722633', text=text))
+                if TWEETS.get(id_) == key:
+                    continue
+                TWEETS[id_] = key
+
+                date = post['date']
+                date_t = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+                if (now - date_t) > TWEET_MAX_BEFORE:
+                    continue
+
+                content = TWEET_RE_HTML.sub('', post['content'])
+                content = html.unescape(content)
+                content = content.replace('・', '·')  # HACK: Fix gbk encoding
+                content = content.replace('#艦これ', '')
+                content = content.strip()
+
+                text = '\n'.join(["「艦これ」開発/運営", date, '', content])
+                qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
+                qqbot.send(SendGroupMessage(group='489722633', text=text))
             except:
                 traceback.print_exc()
 
