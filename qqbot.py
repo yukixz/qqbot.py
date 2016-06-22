@@ -20,13 +20,13 @@ from cqbot import CQBot, \
     RE_CQ_SPECIAL, CQAt
 
 
+POI_GROUP = '378320628'
+
 qqbot = CQBot(11235)
 scheduler = BackgroundScheduler(
     timezone='Asia/Tokyo',
     job_defaults={'misfire_grace_time': 60},
     )
-
-POI_GROUP = '378320628'
 
 
 def match(text, keywords):
@@ -345,7 +345,7 @@ if __name__ == '__main__':
         scheduler.start()
 
         # scheduler.print_jobs()
-        print("QQBot is running...")
+        print("Running...")
         input()
     except KeyboardInterrupt:
         pass

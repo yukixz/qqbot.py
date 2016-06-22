@@ -49,6 +49,16 @@ class CQAt:
         return "[CQ:at,qq={}]".format(self.qq)
 
 
+class CQImage:
+    PATTERN = re.compile(r'\[CQ:image,file=(.+?)\]')
+
+    def __init__(self, file):
+        self.file = file
+
+    def __str__(self):
+        return "[CQ:image,file={}]".format(self.file)
+
+
 def load_frame(data):
     if isinstance(data, str):
         parts = data.split()
