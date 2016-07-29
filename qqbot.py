@@ -18,6 +18,7 @@ from cqbot import CQBot, \
     SendPrivateMessage, SendGroupMessage, SendDiscussMessage, \
     GroupMemberDecrease, GroupMemberIncrease, \
     RE_CQ_SPECIAL, CQAt
+from utils import match, reply
 
 
 POI_GROUP = '378320628'
@@ -27,36 +28,6 @@ scheduler = BackgroundScheduler(
     timezone='Asia/Tokyo',
     job_defaults={'misfire_grace_time': 60},
     )
-
-
-def match(text, keywords):
-    for keyword in keywords:
-        if keyword in text:
-            return True
-    return False
-
-
-def reply(message, text):
-    reply_msg = None
-    if isinstance(message, RcvdPrivateMessage):
-        reply_msg = SendPrivateMessage(
-            qq=message.qq,
-            text=text,
-            )
-    if isinstance(message, RcvdGroupMessage):
-        reply_msg = SendGroupMessage(
-            group=message.group,
-            text=text,
-            )
-    if isinstance(message, RcvdDiscussMessage):
-        reply_msg = SendDiscussMessage(
-            discuss=message.discuss,
-            text=text,
-            )
-    if reply_msg:
-        qqbot.send(reply_msg)
-        print("↘", message)
-        print("↗", reply_msg)
 
 
 ################
@@ -135,7 +106,7 @@ def faq(message):
             send_text = faq.message
 
         faq.triggered = now
-        reply(message, send_text)
+        reply(qqbot, message, send_text)
         return True
 
 
@@ -163,7 +134,7 @@ def roll(message):
             if ROLL_LOWER <= n <= ROLL_UPPER:
                 ranges.append(n)
             else:
-                reply(message, ROLL_HELP)
+                reply(qqbot, message, ROLL_HELP)
                 return True
             continue
         except:
@@ -188,7 +159,7 @@ def roll(message):
     roll_text = ", ".join(rolls)
     send_text = "[roll] [CQ:at,qq={}]: {}".format(message.qq, roll_text)
 
-    reply(message, send_text)
+    reply(qqbot, message, send_text)
     return True
 
 
@@ -237,7 +208,7 @@ def repeat(message):
     if msg.repeated or msg.count < REPEAT_COUNT_MIN:
         return
     if random.randint(1, REPEAT_COUNT_MAX - msg.count + 1) == 1:
-        reply(message, msg.text)
+        reply(qqbot, message, msg.text)
         msg.repeated = True
         return True
 
@@ -344,7 +315,6 @@ if __name__ == '__main__':
         qqbot.start()
         scheduler.start()
 
-        # scheduler.print_jobs()
         print("Running...")
         input()
     except KeyboardInterrupt:

@@ -1,12 +1,12 @@
 [
   {
     "keywords": ["下载", "哪里下"],
-    "message": "poi 下载地址\n百度网盘：https://0u0.moe/poi\nGithub: https://github.com/poooi/poi/releases"
+    "message": "poi 下载地址\n国内镜像：http://0u0.moe/poi\nGithub: https://github.com/poooi/poi/releases"
   },
   {
     "keywords": ["版本", "最新版", "稳定版"],
     "whitelist": ["qq"],
-    "message": "poi 最新稳定版：6.3.0\npoi 最新测试版：6.3.1-beta.2\n测试版可能存在 bug，请谨慎使用"
+    "message": "poi 最新稳定版：6.3.3\npoi 最新测试版：-\n测试版可能存在 bug，请谨慎使用"
   },
   {
     "keywords": ["掉落", "掉率", "哪里掉"],
@@ -15,15 +15,11 @@
   {
     "keywords": ["白屏", "黑屏"],
     "whitelist": ["不", "没", "还"],
-    "message": "poi 白屏/黑屏问题解决方法\n\nA. 岛风Go用户请尝试以下操作\n1. 检查代理设置\n a. 「poi 端口」不是 0：请设置为「0」并重启poi\n2. 请尝试打开「baidu.com」\n a. 可以打开百度：岛风Go换线\n b. 不能打开百度：重启岛风Go\n3. 咨询岛风Go客服\n\nB. 其他代理用户请提供以下信息\n1. poi 版本号、代理软件、能否使用其他浏览器打开游戏\n2. 代理设置截图"
+    "message": "poi 白屏/黑屏问题解决方法\n\nA. 通用\n1. 如果「网络代理→poi 端口」不是 0：请设置为「0」并重启poi\n2. 取消勾选「显示设置→分辨率随窗口大小自动调整」\n\nB. 岛风Go用户请尝试以下操作\n1. 请尝试打开「baidu.com」\n a. 可以打开百度：岛风Go换线\n b. 不能打开百度：重启岛风Go\n2. 咨询岛风Go客服\n\nC. 其他代理用户请提供以下信息\n1. poi 版本号、代理软件、能否使用其他浏览器打开游戏\n2. 代理设置截图"
   },
   {
     "keywords": ["窗口大小"],
     "message": "poi 窗口大小无法更改：\n1. 请按 Alt 打开菜单（Windows/Linux 用户）\n2. 在「poi」菜单中勾选「允许变更窗口大小」"
-  },
-  {
-    "keywords": ["poi缓存", "使用缓存", "本地缓存"],
-    "message": "poi 如何使用本地缓存：\n0. 岛风Go用户不需要设置 poi 的本地缓存\n1. 在左下角工具栏中，点击闪电图标打开自定义缓存目录\n2. 在该目录中创建「KanColle」目录\n3. 将缓存文件放到 KanColle 目录中\n4. 最终目录结构为「MyCache/KanColle/kcs」"
   },
   {
     "keywords": ["删除缓存", "删缓存"],
@@ -34,8 +30,16 @@
     "message": "删除 poi 配置文件：\n1. 关闭 poi\n2. 在文件管理器中打开 poi 数据目录\nWindows: %APPDATA%/poi\nMac: ~/Library/Application Support/poi\nLinux: ~/.config/poi\n3. 删除文件「config.cson」"
   },
   {
-    "keywords": ["同步数据"],
-    "message": "您可以使用同步软件同步特定目录/文件、以同步 poi 数据\npoi 数据目录：\n* Windows: %APPDATA%/poi\n* Mac: ~/Library/Application Support/poi\n* Linux: ~/.config/poi\n需同步的目录/文件：\n* config.cson 设置\n* quest_tracking_123456789.cson 任务计数\n* akashic-records 航海日志\n* battle-detail 战斗详情\n* hairstrength 我变强了\n* hensei-nikki 编成日记\n* wheres-my-fuel-gone 耗资记录"
+    "keywords": ["poi索敌", "索敌公式"],
+    "message": "poi 6.3.0+ 的索敌公式为 33 式，索敌值达到 33 即可在 2-5 上路稳定进入 boss。请自行搜索相关资料。"
+  },
+  {
+    "keywords": ["poi缓存", "使用缓存", "本地缓存"],
+    "message": "poi 如何使用本地缓存：\n0. 岛风Go用户不需要设置 poi 的本地缓存\n1. 在左下角工具栏中，点击闪电图标打开自定义缓存目录\n2. 在该目录中创建「KanColle」目录\n3. 将缓存文件放到 KanColle 目录中\n4. 最终目录结构为「MyCache/KanColle/kcs」"
+  },
+  {
+    "keywords": ["poi数据"],
+    "message": "poi 数据目录：\n* Windows: %APPDATA%/poi\n* Mac: ~/Library/Application Support/poi\n* Linux: ~/.config/poi\n数据目录内有意义的目录/文件：\n* config.cson 设置\n* quest_tracking_123456789.cson 任务计数\n* akashic-records 航海日志\n* battle-detail 战斗详情\n* hairstrength 我变强了\n* hensei-nikki 编成日记\n* wheres-my-fuel-gone 耗资记录"
   },
   {
     "keywords": ["一心二用"],
@@ -82,12 +86,14 @@
   },
   {
   "keywords": ["性暗示"],
-  "message": "[CQ:image,file=B5C83ED9F87A5344FFD1E1307A9DD796.jpg]",
-  "interval": 60
+  "message": "[CQ:image,file=images/xinganshi.jpg]"
   },
   {
-  "keywords": ["511喷雾"],
-  "message": ["[CQ:image,file=1010554D99470521DB37ADA0BDDFCBAA.png]", "[CQ:image,file=BBF21A7A2800C8560E16E77413027C8C.png]"],
-  "interval": 60
+  "keywords": ["咩咩咩"],
+  "message": "[CQ:image,file=images/miemiemie.png]"
+  },
+  {
+  "keywords": ["汪汪汪"],
+  "message": "[CQ:image,file=images/wangwangwang.jpg]"
   }
 ]

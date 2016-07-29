@@ -42,6 +42,8 @@ RE_CQ_SPECIAL = re.compile(r'\[CQ:\w+(,.+?)?\]')
 
 
 class CQAt:
+    PATTERN = re.compile(r'\[CQ:at,qq=(\d+?)\]')
+
     def __init__(self, qq):
         self.qq = qq
 

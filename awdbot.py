@@ -9,9 +9,10 @@ from configparser import ConfigParser
 from urllib.request import urlretrieve
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from cqbot import CQBot, RcvdGroupMessage, SendGroupMessage, CQAt, CQImage
+from cqbot import CQBot, CQAt, CQImage, RcvdPrivateMessage, RcvdGroupMessage
+from utils import reply
 
-TTL = 3600  # Seconds
+TTL = 604800  # 7 Day (Seconds)
 CQ_IMAGE_ROOT = r'C:\Users\Dazzy\Desktop\CoolQ\data\image'
 POI_GROUP = '378320628'
 ADMIN_QQ = ('412632991', )
@@ -33,11 +34,12 @@ def blacklist(message):
         return True
 
 
-@qqbot.listener((RcvdGroupMessage, ))
+@qqbot.listener((RcvdGroupMessage, RcvdPrivateMessage))
 def command(message):
     # Restrict to admin
     if message.qq not in ADMIN_QQ:
         return
+    # Parse message
     try:
         texts = message.text.split()
         cmd = texts[0]
@@ -47,6 +49,10 @@ def command(message):
         return
     if cmd != '/awd':
         return
+
+    match = CQAt.PATTERN.fullmatch(qq)
+    if match and match.group(1):
+        qq = match.group(1)
     try:
         idx = list(map(lambda x: int(x), idx))
     except:
@@ -61,11 +67,8 @@ def command(message):
             item = items[i]
         except:
             continue
-        qqbot.send(SendGroupMessage(
-            group=message.group,
-            text="[awd] {qq} # {i}\n{text}".format(
-                i=i, qq=CQAt(item.qq), text=item.text),
-            ))
+        reply(qqbot, message, "[awd] {qq} # {i}\n{text}".format(
+                i=i, qq=CQAt(item.qq), text=item.text))
 
 
 @qqbot.listener((RcvdGroupMessage, ))
@@ -137,6 +140,8 @@ def clean():
 if __name__ == '__main__':
     try:
         qqbot.start()
+        # scheduler.start()
+
         print("Running...")
         input()
     except KeyboardInterrupt:
