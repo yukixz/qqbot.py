@@ -12,6 +12,7 @@ from collections import namedtuple
 
 
 ClientHello = namedtuple("ClientHello", ("port"))
+ServerHello = namedtuple("ServerHello", ())
 
 RcvdPrivateMessage = namedtuple("RcvdPrivateMessage", ("qq", "text"))
 SendPrivateMessage = namedtuple("SendPrivateMessage", ("qq", "text"))
@@ -31,6 +32,7 @@ GroupMemberIncrease = namedtuple("GroupMemberIncrease",
 FrameType = namedtuple("FrameType", ("prefix", "rcvd", "send"))
 FRAME_TYPES = (
     FrameType("ClientHello", (), ClientHello),
+    FrameType("ServerHello", ServerHello, ()),
     FrameType("PrivateMessage", RcvdPrivateMessage, SendPrivateMessage),
     FrameType("GroupMessage", RcvdGroupMessage, SendGroupMessage),
     FrameType("DiscussMessage", RcvdDiscussMessage, SendDiscussMessage),
