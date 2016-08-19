@@ -26,7 +26,7 @@
     "message": "poi 如何删除缓存：\n1. 在 poi 左下角工具栏中，点击闪电图标打开自定义缓存目录，清空该目录\n2. 在 poi 设置中点击「删除缓存」\n3. 请检查代理软件的缓存设置"
   },
   {
-    "keywords": ["删除config", "删config"],
+    "keywords": ["删除config", "删config", "删除配置文件"],
     "message": "删除 poi 配置文件：\n1. 关闭 poi\n2. 在文件管理器中打开 poi 数据目录\nWindows: %APPDATA%/poi\nMac: ~/Library/Application Support/poi\nLinux: ~/.config/poi\n3. 删除文件「config.cson」"
   },
   {
