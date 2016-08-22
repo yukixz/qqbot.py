@@ -13,7 +13,7 @@ from cqbot import CQBot, CQAt, CQImage, RcvdPrivateMessage, RcvdGroupMessage
 from utils import reply
 
 TTL = 604800  # 7 Day (Seconds)
-CQ_IMAGE_ROOT = r'C:\Users\Dazzy\Desktop\CoolQ\data\image'
+CQ_IMAGE_ROOT = r'C:/Users/Administrator/Desktop/CoolQ/data/image'
 POI_GROUP = '378320628'
 ADMIN_QQ = ('412632991', )
 
