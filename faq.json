@@ -6,7 +6,7 @@
   {
     "keywords": ["版本", "最新版", "稳定版"],
     "whitelist": ["qq"],
-    "message": "poi 最新稳定版：6.3.3\npoi 最新测试版：7.0.0-beta.?\n测试版可能存在 bug，请谨慎使用"
+    "message": "poi 最新稳定版：7.0.1\npoi 最新测试版：-\n测试版可能存在 bug，请谨慎使用"
   },
   {
     "keywords": ["掉落", "掉率", "哪里掉"],
@@ -85,15 +85,11 @@
     "interval": 4
   },
   {
-  "keywords": ["性暗示"],
+  "keywords": ["性暗示", "去洗澡"],
   "message": "[CQ:image,file=images/xinganshi.jpg]"
   },
   {
-  "keywords": ["咩咩咩"],
-  "message": "[CQ:image,file=images/miemiemie.png]"
-  },
-  {
-  "keywords": ["汪汪汪"],
-  "message": "[CQ:image,file=images/wangwangwang.jpg]"
+  "keywords": ["马路油喷雾"],
+  "message": "[CQ:image,file=images/spray-maruyu.jpg]"
   }
 ]

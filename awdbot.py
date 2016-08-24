@@ -102,6 +102,7 @@ class ImageDownloader(threading.Thread):
             url = parser['image']['url']
             urlretrieve(url, path)
         except:
+            print('===>', self.filename)
             traceback.print_exc()
 
 
