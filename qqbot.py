@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 import pytz
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from cqbot import CQBot, \
+from cqsdk import CQBot, \
     RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
     SendPrivateMessage, SendGroupMessage, SendDiscussMessage, \
     GroupMemberDecrease, GroupMemberIncrease, \

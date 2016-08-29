@@ -9,7 +9,7 @@ from configparser import ConfigParser
 from urllib.request import urlretrieve
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from cqbot import CQBot, CQAt, CQImage, RcvdPrivateMessage, RcvdGroupMessage
+from cqsdk import CQBot, CQAt, CQImage, RcvdPrivateMessage, RcvdGroupMessage
 from utils import reply
 
 TTL = 604800  # 7 Day (Seconds)
