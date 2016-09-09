@@ -1,4 +1,4 @@
-# cqbot
+# QQBot
 QQBot using CoolQ Socket API.
 
 ## cqsocketapi
