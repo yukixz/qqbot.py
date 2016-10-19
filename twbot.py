@@ -49,7 +49,7 @@ class TL:
     twitter = {
         'url': "https://api.twitter.com/1.1/statuses/user_timeline.json",
         'params': {
-            "screen_name": "yukixz",
+            "screen_name": "KanColle_STAFF",
             "trim_user": 1,
             "count": 20,
         },
@@ -151,7 +151,7 @@ def poll_kcwiki():
 ################
 class Avatar:
     twitter_url = "https://api.twitter.com/1.1/users/show.json"
-    twitter_params = {"screen_name": "yukixz"}
+    twitter_params = {"screen_name": "KanColle_STAFF"}
     image_prog = re.compile(r'_normal\.(jpg|png|gif)')
     image_repl = r'.\1'
     image_root = config.CQ_IMAGE_ROOT
