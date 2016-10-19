@@ -11,7 +11,7 @@ from cqsdk import RE_CQ_SPECIAL, \
 
 
 def error(*args, **kwargs):
-    print("================================", file=sys.stderr)
+    print("================ ERROR ================", file=sys.stderr)
     print(*args, **kwargs, file=sys.stderr)
 
 
