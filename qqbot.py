@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 # coding: UTF-8
 
-import html
 import json
 import random
-import re
 import time
-import traceback
 from collections import deque
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pytz
-import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from cqsdk import CQBot, \
     RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
@@ -28,15 +24,6 @@ scheduler = BackgroundScheduler(
     timezone='Asia/Tokyo',
     job_defaults={'misfire_grace_time': 60},
     )
-
-
-################
-# debug
-################
-@qqbot.listener((RcvdPrivateMessage, ))
-def debug(message):
-    if message.qq == '412632991':
-        print('DEBUG', message)
 
 
 ################
@@ -255,56 +242,6 @@ def notify_hourly():
 def notify_pratice():
     qqbot.send(SendGroupMessage(
         group=POI_GROUP, text="演习快刷新啦、赶紧打演习啦！"))
-
-
-################
-# twitter
-################
-TWEETS = {}
-TWEET_URL = 'http://t.kcwiki.moe/?json=1&count=10'
-TWEET_RE_HTML = re.compile(r'<\w+.*?>|</\w+>')
-TWEET_MAX_BEFORE = timedelta(hours=12)
-
-
-@scheduler.scheduled_job('cron', minute='*', second='42')
-def twitter_kcwiki():
-    response = requests.get(TWEET_URL, timeout=20)
-    posts = response.json().get('posts', [])
-    posts.reverse()
-    now = datetime.now()
-
-    if TWEETS:  # is not empty
-        for post in posts:
-            try:
-                id_ = post['id']
-                key = len(post['content'])
-
-                if TWEETS.get(id_) == key:
-                    continue
-                TWEETS[id_] = key
-
-                date = post['date']
-                date_t = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-                if (now - date_t) > TWEET_MAX_BEFORE:
-                    continue
-
-                content = TWEET_RE_HTML.sub('', post['content'])
-                content = html.unescape(content)
-                content = content.replace('・', '·')  # HACK: Fix gbk encoding
-                content = content.replace('#艦これ', '')
-                content = content.strip()
-
-                text = '\n'.join(["「艦これ」開発/運営", date, '', content])
-                qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
-                qqbot.send(SendGroupMessage(group='489722633', text=text))
-            except:
-                traceback.print_exc()
-
-    else:
-        for post in posts:
-            id_ = post['id']
-            key = len(post['content'])
-            TWEETS[id_] = key
 
 
 ################

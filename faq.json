@@ -1,12 +1,8 @@
 [
   {
-    "keywords": ["下载", "哪里下"],
-    "message": "poi 下载地址\n国内镜像：http://0u0.moe/poi\nGithub: https://github.com/poooi/poi/releases"
-  },
-  {
-    "keywords": ["版本", "最新版", "稳定版"],
+    "keywords": ["下载", "哪里下", "版本", "最新版", "稳定版"],
     "whitelist": ["qq"],
-    "message": "poi 最新稳定版：7.0.1\npoi 最新测试版：-\n测试版可能存在 bug，请谨慎使用"
+    "message": "poi 下载地址：https://poi.io\n最新稳定版：7.1.0\n最新测试版：-"
   },
   {
     "keywords": ["掉落", "掉率", "哪里掉"],

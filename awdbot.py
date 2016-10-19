@@ -9,11 +9,11 @@ from configparser import ConfigParser
 from urllib.request import urlretrieve
 
 from apscheduler.schedulers.background import BackgroundScheduler
+
+import config
 from cqsdk import CQBot, CQAt, CQImage, RcvdPrivateMessage, RcvdGroupMessage
 from utils import reply
 
-TTL = 604800  # 7 Day (Seconds)
-CQ_IMAGE_ROOT = r'C:/Users/Administrator/Desktop/CoolQ/data/image'
 POI_GROUP = '378320628'
 ADMIN_QQ = ('412632991', )
 
@@ -91,11 +91,11 @@ class ImageDownloader(threading.Thread):
 
     def run(self):
         try:
-            path = os.path.join(CQ_IMAGE_ROOT, self.filename)
+            path = os.path.join(config.CQ_IMAGE_ROOT, self.filename)
             if os.path.exists(path):
                 return
 
-            cqimg = os.path.join(CQ_IMAGE_ROOT, self.filename + '.cqimg')
+            cqimg = os.path.join(config.CQ_IMAGE_ROOT, self.filename+'.cqimg')
             parser = ConfigParser()
             parser.read(cqimg)
 
@@ -104,38 +104,6 @@ class ImageDownloader(threading.Thread):
         except:
             print('===>', self.filename)
             traceback.print_exc()
-
-
-@scheduler.scheduled_job('cron', minute='*/10')
-def clean():
-    global messages
-    ttl_time = int(time.time()) - TTL
-
-    new_messages = []
-    old_messages = []
-    for item in messages:
-        if item.time >= ttl_time:
-            new_messages.append(item)
-        else:
-            old_messages.append(item)
-    messages = new_messages
-
-    images = []
-    for item in old_messages:
-        for match in CQImage.PATTERN.finditer(item.text):
-            images.append(match.group(1))
-    for item in new_messages:
-        for match in CQImage.PATTERN.finditer(item.text):
-            try:
-                images.remove(match.group(1))
-            except ValueError:
-                pass
-    for filename in images:
-        try:
-            path = os.path.join(CQ_IMAGE_ROOT, filename)
-            os.remove(path)
-        except FileNotFoundError:
-            pass
 
 
 if __name__ == '__main__':
