@@ -10,9 +10,9 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from requests_oauthlib import OAuth1Session
 
-import config
+import utils
+from utils import CQ_IMAGE_ROOT, error, FileDownloader
 from cqsdk import CQBot, CQImage, SendGroupMessage
-from utils import error
 
 
 qqbot = CQBot(11235, online=False)
@@ -59,6 +59,9 @@ class TL:
         'url': "http://api.kcwiki.moe/tweet/20",
     }
     html_tag = re.compile(r'<\w+.*?>|</\w+>')
+    image_subdir = 'twitter'
+
+utils.mkdir(os.path.join(CQ_IMAGE_ROOT, TL.image_subdir))
 
 
 class Tweet:
@@ -67,14 +70,15 @@ class Tweet:
         self.date = None
         self.ja = ''
         self.zh = ''
+        self.media = []
 
     def __str__(self):
         if self.date is None:
             error("Stringify `Tweet` before assgin `Tweet.date`.")
-            raise ValueError("Tweet.date is None")
+            raise ValueError(self)
         dt = self.date.astimezone(timezone(timedelta(hours=9)))
         ds = datetime.strftime(dt, "%Y-%m-%d %H:%M:%S JST")
-        li = ["「艦これ」開発/運営", ds]
+        results = ["「艦これ」開発/運営", ds]
         for t in [self.ja, self.zh]:
             if len(t) == 0:
                 continue
@@ -82,8 +86,9 @@ class Tweet:
             t = t.replace('・', '·')
             t = t.replace('✕', '×')
             t = t.replace('#艦これ', '')
-            li.extend(['', t.strip()])
-        return '\n'.join(li)
+            results.extend(['', t.strip()])
+        results.extend([str(m) for m in self.media])
+        return '\n'.join(results)
 
 
 @scheduler.scheduled_job('cron', minute='*', second='10')
@@ -105,7 +110,21 @@ def poll_twitter():
             post['created_at'], "%a %b %d %H:%M:%S %z %Y")
         if tweet.date is None or date < tweet.date:
             tweet.date = date
-        tweet.ja = post['text']
+        for ent in post['entities'].get('urls', []):
+            text = text.replace(ent['url'], ent['display_url'])
+        for ent in post['entities'].get('media', []):
+            text = text.replace(ent['url'], ent['display_url'])
+            url = ent['media_url']
+            filename = os.path.basename(url)
+            FileDownloader(
+                url=url,
+                path=os.path.join(
+                    CQ_IMAGE_ROOT, TL.image_subdir, filename),
+                requests_kwargs=REQUESTS_PROXIED,
+            ).run()
+            tweet.media.append(
+                CQImage(os.path.join(TL.image_subdir, filename)))
+        tweet.ja = text
         TL.tweets[id_] = tweet
 
         if TL.twitter_inited:
@@ -137,7 +156,8 @@ def poll_kcwiki():
                        .replace(tzinfo=timezone(timedelta(hours=8)))
         if tweet.date is None or date < tweet.date:
             tweet.date = date
-        tweet.zh = TL.html_tag.sub('', text)
+        text = TL.html_tag.sub('', text)
+        tweet.zh = text
         TL.tweets[id_] = tweet
 
         if TL.kcwiki_inited:
@@ -158,12 +178,10 @@ class Avatar:
     twitter_params = {"screen_name": "KanColle_STAFF"}
     image_prog = re.compile(r'_normal\.(jpg|png|gif)')
     image_repl = r'.\1'
-    image_root = config.CQ_IMAGE_ROOT
-    image_subdir = 'avatar'
-    latest_url = None
+    image_subdir = 'twitter'
+    latest = None
 
-    def __init__(self):
-        os.makedirs(os.path.join(Avatar.image_root, Avatar.image_subdir))
+utils.mkdir(os.path.join(CQ_IMAGE_ROOT, Avatar.image_subdir))
 
 
 @scheduler.scheduled_job('cron', minute='*', second='50')
@@ -175,25 +193,27 @@ def poll_avatar():
 
     if resp.status_code == 200:
         user = resp.json()
-        image_url = Avatar.image_prog.sub(
+        url = Avatar.image_prog.sub(
             Avatar.image_repl, user['profile_image_url_https'])
     else:
         error("Response failed:", resp.status_code, resp.text)
         return
 
-    if Avatar.latest_url is None:
-        Avatar.latest_url = image_url
-        print("Avatar:", image_url)
+    if Avatar.latest is None:
+        Avatar.latest = url
+        print("Avatar:", url)
         return
 
-    if Avatar.latest_url != image_url:
-        print("Avatar:", image_url)
-        filename = os.path.basename(image_url)
-        path = os.path.join(Avatar.image_root, Avatar.image_subdir, filename)
-        with open(path, 'wb') as f:
-            r = requests.get(image_url, **REQUESTS_PROXIED)
-            f.write(r.content)
-        Avatar.latest_url = image_url
+    if Avatar.latest != url:
+        print("Avatar:", url)
+        filename = os.path.basename(url)
+        FileDownloader(
+            url=url,
+            path=os.path.join(
+                CQ_IMAGE_ROOT, Avatar.image_subdir, filename),
+            requests_kwargs=REQUESTS_PROXIED
+        ).run()
+        Avatar.latest = url
 
         text = '\n'.join([
             user['name'],
@@ -211,8 +231,8 @@ if __name__ == '__main__':
     try:
         qqbot.start()
         scheduler.start()
-
         print("Running...")
         input()
+        print("Stopping...")
     except KeyboardInterrupt:
         pass

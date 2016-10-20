@@ -1,18 +1,30 @@
 #!/use/bin/env python3
 
+import os
 import sys
 import threading
 import traceback
-from urllib.request import urlretrieve
+
+import requests
 from cqsdk import RE_CQ_SPECIAL, \
     RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
     SendPrivateMessage, SendGroupMessage, SendDiscussMessage, \
     GroupMemberDecrease, GroupMemberIncrease
 
 
+CQ_IMAGE_ROOT = r'C:/Users/Dazzy/Desktop/CoolQ/data/image'
+
+
 def error(*args, **kwargs):
     print("================ ERROR ================", file=sys.stderr)
     print(*args, **kwargs, file=sys.stderr)
+
+
+def mkdir(path):
+    try:
+        os.makedirs(path)
+    except FileExistsError:
+        pass
 
 
 def match(text, keywords):
@@ -46,14 +58,23 @@ def reply(qqbot, message, text):
 
 
 class FileDownloader(threading.Thread):
-    def __init__(self, url, path, *args, **kwargs):
+    def __init__(self, url, path, requests_kwargs={}, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.url = url
         self.path = path
+        self.requests_kwargs = requests_kwargs
 
     def run(self):
         try:
-            urlretrieve(self.url, self.path)
+            self.download()
         except:
-            error("ERROR downloading:", self.url, 'to', self.path)
+            error("[FileDownloader]", "Catch exception on downloading.")
             traceback.print_exc()
+
+    def download(self):
+        if os.path.exists(self.path):
+            print("[FileDownloader]", "Exists", self.path)
+            return
+        r = requests.get(self.url, **self.requests_kwargs)
+        with open(self.path, 'wb') as f:
+            f.write(r.content)
