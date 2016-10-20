@@ -136,7 +136,7 @@ class APIServer(socketserver.UDPServer):
 
 
 class CQBot():
-    def __init__(self, server_port, client_port=0):
+    def __init__(self, server_port, client_port=0, online=True):
         self.listeners = []
 
         self.remote_addr = ("127.0.0.1", server_port)
@@ -145,12 +145,20 @@ class CQBot():
         self.local_addr = ("127.0.0.1", client_port)
         self.server = APIServer(self.local_addr, APIRequestHandler)
 
+        # Online mode
+        #   True: Retrive message from socket API server
+        #   False: Send message only
+        self.online = online
+
     def __del__(self):
         self.client.close()
         self.server.shutdown()
         self.server.server_close()
 
     def start(self):
+        if not self.online:
+            return
+
         self.server.listeners = self.listeners
         threaded_server = threading.Thread(
             target=self.server.serve_forever,
