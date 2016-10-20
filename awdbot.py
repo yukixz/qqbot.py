@@ -10,18 +10,17 @@ from urllib.request import urlretrieve
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-import config
 from cqsdk import CQBot, CQAt, CQImage, RcvdPrivateMessage, RcvdGroupMessage
-from utils import reply
+from utils import CQ_IMAGE_ROOT, error, reply
 
 POI_GROUP = '378320628'
 ADMIN_QQ = ('412632991', )
 
 qqbot = CQBot(11235)
-scheduler = BackgroundScheduler(
-    timezone='Asia/Tokyo',
-    job_defaults={'misfire_grace_time': 60},
-    )
+# scheduler = BackgroundScheduler(
+#     timezone='Asia/Tokyo',
+#     job_defaults={'misfire_grace_time': 60},
+#     )
 
 Message = namedtuple('Manifest', ('qq', 'time', 'text'))
 messages = []
@@ -80,7 +79,7 @@ def new(message):
             filename = match.group(1)
             ImageDownloader(filename).start()
         except:
-            print(message)
+            error(message)
             traceback.print_exc()
 
 
@@ -91,18 +90,18 @@ class ImageDownloader(threading.Thread):
 
     def run(self):
         try:
-            path = os.path.join(config.CQ_IMAGE_ROOT, self.filename)
+            path = os.path.join(CQ_IMAGE_ROOT, self.filename)
             if os.path.exists(path):
                 return
 
-            cqimg = os.path.join(config.CQ_IMAGE_ROOT, self.filename+'.cqimg')
+            cqimg = os.path.join(CQ_IMAGE_ROOT, self.filename+'.cqimg')
             parser = ConfigParser()
             parser.read(cqimg)
 
             url = parser['image']['url']
             urlretrieve(url, path)
         except:
-            print('===>', self.filename)
+            error(self.filename)
             traceback.print_exc()
 
 
@@ -110,8 +109,8 @@ if __name__ == '__main__':
     try:
         qqbot.start()
         # scheduler.start()
-
         print("Running...")
         input()
+        print("Stopping...")
     except KeyboardInterrupt:
         pass

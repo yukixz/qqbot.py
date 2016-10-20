@@ -251,8 +251,8 @@ if __name__ == '__main__':
     try:
         qqbot.start()
         scheduler.start()
-
         print("Running...")
         input()
+        print("Stopping...")
     except KeyboardInterrupt:
         pass
