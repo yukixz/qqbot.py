@@ -65,18 +65,18 @@ class Tweet:
     def __init__(self, id_):
         self.id_ = id_
         self.date = None
-        self.ja = None
-        self.zh = None
+        self.ja = ''
+        self.zh = ''
 
     def __str__(self):
         if self.date is None:
             error("Stringify `Tweet` before assgin `Tweet.date`.")
             return ''
         dt = self.date.astimezone(timezone(timedelta(hours=9)))
-        ds = datetime.strftime(dt, "%Y-%m-%d %H:%M:%S")
+        ds = datetime.strftime(dt, "%Y-%m-%d %H:%M:%S JST")
         li = [ds]
         for t in [self.ja, self.zh]:
-            if t is not None:
+            if len(t) > 0:
                 li.append(t)
         return '\n\n'.join(li)
 
@@ -90,7 +90,7 @@ def poll_twitter():
     for post in posts:
         id_ = post['id_str']
         tweet = TL.tweets.get(id_, Tweet(id_))
-        if tweet.ja is not None:
+        if len(tweet.ja) > 0:
             continue
 
         date = datetime.strptime(
@@ -122,7 +122,7 @@ def poll_kcwiki():
     for post in posts:
         id_ = post['id']
         tweet = TL.tweets.get(id_, Tweet(id_))
-        if tweet.zh is not None:
+        if len(tweet.zh) > 0:
             continue
 
         date = datetime.strptime(post['date'], "%Y-%m-%d %H:%M:%S") \
