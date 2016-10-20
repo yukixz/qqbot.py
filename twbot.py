@@ -15,7 +15,7 @@ from cqsdk import CQBot, CQImage, SendGroupMessage
 from utils import error
 
 
-qqbot = CQBot(11235)
+qqbot = CQBot(11235, online=False)
 scheduler = BackgroundScheduler(
     timezone='Asia/Tokyo',
     job_defaults={'misfire_grace_time': 60},
@@ -58,7 +58,7 @@ class TL:
     kcwiki = {
         'url': "http://api.kcwiki.moe/tweet/20",
     }
-    html_pattern = re.compile(r'<\w+.*?>|</\w+>')
+    html_tag = re.compile(r'<\w+.*?>|</\w+>')
 
 
 class Tweet:
@@ -71,14 +71,18 @@ class Tweet:
     def __str__(self):
         if self.date is None:
             error("Stringify `Tweet` before assgin `Tweet.date`.")
-            return ''
+            raise ValueError("Tweet.date is None")
         dt = self.date.astimezone(timezone(timedelta(hours=9)))
         ds = datetime.strftime(dt, "%Y-%m-%d %H:%M:%S JST")
-        li = [ds]
+        li = ["「艦これ」開発/運営", ds]
         for t in [self.ja, self.zh]:
             if len(t) > 0:
-                li.append(t)
-        return '\n\n'.join(li)
+                # Fix gbk encoding
+                t = t.replace('・', '·')
+                t = t.replace('✕', '×')
+                t = t.replace('#艦これ', '')
+                li.extend(['', t.strip()])
+        return '\n'.join(li)
 
 
 @scheduler.scheduled_job('cron', minute='*', second='10')
@@ -97,14 +101,11 @@ def poll_twitter():
             post['created_at'], "%a %b %d %H:%M:%S %z %Y")
         if tweet.date is None or date < tweet.date:
             tweet.date = date
-        text = post['text']
-        text = text.replace('・', '·')  # Fix gbk encoding
-        text = text.replace('#艦これ', '')
-        tweet.ja = text.strip()
+        tweet.ja = post['text']
         TL.tweets[id_] = tweet
 
         if TL.twitter_inited:
-            text = '\n'.join(["「艦これ」開発/運営", str(tweet)])
+            text = str(tweet)
             for g in NOTIFY_GROUPS:
                 qqbot.send(SendGroupMessage(group=g, text=text))
 
@@ -129,15 +130,11 @@ def poll_kcwiki():
                        .replace(tzinfo=timezone(timedelta(hours=8)))
         if tweet.date is None or date < tweet.date:
             tweet.date = date
-        text = post['zh']
-        text = TL.html_pattern.sub('', text)
-        text = text.replace('・', '·')  # Fix gbk encoding
-        text = text.replace('#艦これ', '')
-        tweet.zh = text.strip()
+        tweet.zh = TL.html_tag.sub('', post['zh'])
         TL.tweets[id_] = tweet
 
         if TL.kcwiki_inited:
-            text = '\n'.join(["「艦これ」開発/運営", str(tweet)])
+            text = str(tweet)
             for g in NOTIFY_GROUPS:
                 qqbot.send(SendGroupMessage(group=g, text=text))
 
