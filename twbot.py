@@ -76,12 +76,13 @@ class Tweet:
         ds = datetime.strftime(dt, "%Y-%m-%d %H:%M:%S JST")
         li = ["「艦これ」開発/運営", ds]
         for t in [self.ja, self.zh]:
-            if len(t) > 0:
-                # Fix gbk encoding
-                t = t.replace('・', '·')
-                t = t.replace('✕', '×')
-                t = t.replace('#艦これ', '')
-                li.extend(['', t.strip()])
+            if len(t) == 0:
+                continue
+            # Fix gbk encoding
+            t = t.replace('・', '·')
+            t = t.replace('✕', '×')
+            t = t.replace('#艦これ', '')
+            li.extend(['', t.strip()])
         return '\n'.join(li)
 
 
@@ -93,7 +94,10 @@ def poll_twitter():
 
     for post in posts:
         id_ = post['id_str']
+        text = post['text']
         tweet = TL.tweets.get(id_, Tweet(id_))
+        if len(text) == 0:
+            continue
         if len(tweet.ja) > 0:
             continue
 
@@ -122,7 +126,10 @@ def poll_kcwiki():
 
     for post in posts:
         id_ = post['id']
+        text = post['zh']
         tweet = TL.tweets.get(id_, Tweet(id_))
+        if len(text) == 0:
+            continue
         if len(tweet.zh) > 0:
             continue
 
@@ -130,7 +137,7 @@ def poll_kcwiki():
                        .replace(tzinfo=timezone(timedelta(hours=8)))
         if tweet.date is None or date < tweet.date:
             tweet.date = date
-        tweet.zh = TL.html_tag.sub('', post['zh'])
+        tweet.zh = TL.html_tag.sub('', text)
         TL.tweets[id_] = tweet
 
         if TL.kcwiki_inited:
