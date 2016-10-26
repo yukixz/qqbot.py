@@ -94,6 +94,8 @@ class Tweet:
 @scheduler.scheduled_job('cron', minute='*', second='10')
 def poll_twitter():
     resp = session.get(**TL.twitter, **REQUESTS_PROXIED)
+    if resp.status_code != 200:
+        print("[twitter]", "Response not success", resp)
     posts = resp.json()
     posts.reverse()
 
@@ -111,9 +113,9 @@ def poll_twitter():
         if tweet.date is None or date < tweet.date:
             tweet.date = date
         for ent in post['entities'].get('urls', []):
-            text = text.replace(ent['url'], ent['display_url'])
+            text = text.replace(ent['url'], ent['expanded_url'])
         for ent in post['entities'].get('media', []):
-            text = text.replace(ent['url'], ent['display_url'])
+            text = text.replace(ent['url'], ent['expanded_url'])
             url = ent['media_url']
             filename = os.path.basename(url)
             FileDownloader(
@@ -134,12 +136,15 @@ def poll_twitter():
 
     if not TL.twitter_inited:
         TL.twitter_inited = True
-        print("TL.Twitter init:", len(posts))
+        print("[twitter]", "init", len(posts))
 
 
 @scheduler.scheduled_job('cron', minute='*', second='30')
 def poll_kcwiki():
     resp = requests.get(**TL.kcwiki)
+    if resp.status_code != 200:
+        print("[kcwiki]", "Response not success", resp)
+        return
     posts = resp.json()
     posts.reverse()
 
@@ -167,7 +172,7 @@ def poll_kcwiki():
 
     if not TL.kcwiki_inited:
         TL.kcwiki_inited = True
-        print("TL.kcwiki init:", len(posts))
+        print("[kcwiki]", "init", len(posts))
 
 
 ################
@@ -196,16 +201,16 @@ def poll_avatar():
         url = Avatar.image_prog.sub(
             Avatar.image_repl, user['profile_image_url_https'])
     else:
-        error("Response failed:", resp.status_code, resp.text)
+        error("[avatar]", "Response failed:", resp.status_code, resp.text)
         return
 
     if Avatar.latest is None:
         Avatar.latest = url
-        print("Avatar:", url)
+        print("[Avatar]", url)
         return
 
     if Avatar.latest != url:
-        print("Avatar:", url)
+        print("[Avatar]", url)
         filename = os.path.basename(url)
         FileDownloader(
             url=url,
