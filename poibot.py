@@ -9,15 +9,13 @@ from datetime import datetime
 
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
-from cqsdk import CQBot, \
-    RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage, \
-    SendPrivateMessage, SendGroupMessage, SendDiscussMessage, \
+from cqsdk import CQBot, CQAt, RE_CQ_SPECIAL, \
+    RcvdPrivateMessage, RcvdGroupMessage, \
+    SendPrivateMessage, SendGroupMessage, \
     GroupMemberDecrease, GroupMemberIncrease, \
-    RE_CQ_SPECIAL, CQAt
+    GroupBan
 from utils import match, reply
 
-
-POI_GROUP = '378320628'
 
 qqbot = CQBot(11235)
 scheduler = BackgroundScheduler(
@@ -27,28 +25,46 @@ scheduler = BackgroundScheduler(
 
 
 ################
-# blacklist
+# Restriction
 ################
-BLACKLIST_KEYWORDS = []
+POI_GROUP = '378320628'
+ADMIN = []
+BANNED_WORDS = []
+BLACKLIST_WORDS = []
 BLACKLIST_USERS = []
 
-with open('blacklist.json', 'r', encoding="utf-8") as f:
+with open('admin.json', 'r', encoding="utf-8") as f:
     data = json.loads(f.read())
-    BLACKLIST_KEYWORDS = data.get("keywords", [])
-    BLACKLIST_USERS = data.get("users", [])
+    ADMIN = data
+
+with open('poi.json', 'r', encoding="utf-8") as f:
+    data = json.loads(f.read())
+    BANNED_WORDS = data.get("banned-words", [])
+    BLACKLIST_WORDS = data.get("blacklist-words", [])
+    BLACKLIST_USERS = data.get("blacklist-users", [])
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage,
-                 GroupMemberIncrease, GroupMemberDecrease))
-def blacklist(message):
-    # Restrict to Poi group
+@qqbot.listener((RcvdGroupMessage, GroupMemberIncrease, GroupMemberDecrease))
+def restriction(message):
     if isinstance(message, (GroupMemberIncrease, GroupMemberDecrease)):
         return message.group != POI_GROUP
-    if isinstance(message, RcvdGroupMessage) and message.group != POI_GROUP:
+    if message.group != POI_GROUP:
         return True
-    if match(message.text.lower(), BLACKLIST_KEYWORDS):
+    if message.qq in ADMIN:
         return True
     if message.qq in BLACKLIST_USERS:
+        return True
+    # else
+    return False
+
+
+@qqbot.listener((RcvdGroupMessage, ))
+def blacklist(message):
+    if match(message.text.lower(), BANNED_WORDS):
+        qqbot.send(GroupBan(message.group, message.qq, 60))
+        print("!!", GroupBan(message.group, message.qq, 60))
+        return True
+    if match(message.text.lower(), BLACKLIST_WORDS):
         return True
     # else
     return False
@@ -75,7 +91,7 @@ with open('faq.json', 'r', encoding="utf-8") as f:
         FAQ.append(FAQObject(jfaq))
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage))
 def faq(message):
     text = message.text.lower()
     now = time.time()
@@ -106,7 +122,7 @@ ROLL_SEPARATOR = ','
 ROLL_HELP = "[roll] 有效范围为 {} ~ {}".format(ROLL_LOWER, ROLL_UPPER)
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage))
 def roll(message):
     texts = message.text.split()
     if not (len(texts) > 0 and texts[0] == '/roll'):
@@ -167,7 +183,7 @@ class QueueMessage:
         self.repeated = False
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage))
+@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage))
 def repeat(message):
     text = message.text
     sender = message.qq
@@ -226,14 +242,15 @@ def join(message):
 ################
 NOTIFY_HOURLY = {}
 
-with open('notify.json', 'r', encoding="utf-8") as f:
-    NOTIFY_HOURLY = json.loads(f.read())
+with open('poi.json', 'r', encoding="utf-8") as f:
+    data = json.loads(f.read())
+    NOTIFY_HOURLY = data.get('notification', {})
 
 
 @scheduler.scheduled_job('cron', hour='*')
 def notify_hourly():
     hour = str(datetime.now(pytz.timezone("Asia/Tokyo")).hour)
-    text = NOTIFY_HOURLY.get(hour, None)
+    text = NOTIFY_HOURLY.get(hour, '')
     if text:
         qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
 

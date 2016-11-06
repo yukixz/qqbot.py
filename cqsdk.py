@@ -22,12 +22,14 @@ SendGroupMessage = namedtuple("SendGroupMessage", ("group", "text"))
 
 RcvdDiscussMessage = namedtuple("RcvdDiscussMessage",
                                 ("discuss", "qq", "text"))
-SendDiscussMessage = namedtuple("SendDiscussMessage", ("discuss", "text"))
+SendDiscussMessage = namedtuple("SendDiscussMessage",
+                                ("discuss", "text"))
 
 GroupMemberDecrease = namedtuple("GroupMemberDecrease",
                                  ("group", "qq", "operatedQQ"))
 GroupMemberIncrease = namedtuple("GroupMemberIncrease",
                                  ("group", "qq", "operatedQQ"))
+GroupBan = namedtuple("GroupBan", ("group", "qq", "duration"))
 
 FrameType = namedtuple("FrameType", ("prefix", "rcvd", "send"))
 FRAME_TYPES = (
@@ -38,6 +40,7 @@ FRAME_TYPES = (
     FrameType("DiscussMessage", RcvdDiscussMessage, SendDiscussMessage),
     FrameType("GroupMemberDecrease", GroupMemberDecrease, ()),
     FrameType("GroupMemberIncrease", GroupMemberIncrease, ()),
+    FrameType("GroupBan", (), GroupBan),
 )
 
 RE_CQ_SPECIAL = re.compile(r'\[CQ:\w+(,.+?)?\]')

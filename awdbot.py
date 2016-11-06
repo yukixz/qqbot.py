@@ -7,14 +7,16 @@ import traceback
 from collections import namedtuple
 from configparser import ConfigParser
 from urllib.request import urlretrieve
-
-from apscheduler.schedulers.background import BackgroundScheduler
+# from apscheduler.schedulers.background import BackgroundScheduler
 
 from cqsdk import CQBot, CQAt, CQImage, RcvdPrivateMessage, RcvdGroupMessage
 from utils import CQ_IMAGE_ROOT, error, reply
 
 POI_GROUP = '378320628'
-ADMIN_QQ = ('412632991', )
+ADMIN_QQ = (
+    '412632991',    # yuki
+    '821578041',    # rui
+)
 
 qqbot = CQBot(11235)
 # scheduler = BackgroundScheduler(
