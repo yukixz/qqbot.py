@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 import os
 import threading
 import time
@@ -12,17 +13,14 @@ from urllib.request import urlretrieve
 from cqsdk import CQBot, CQAt, CQImage, RcvdPrivateMessage, RcvdGroupMessage
 from utils import CQ_IMAGE_ROOT, error, reply
 
-POI_GROUP = '378320628'
-ADMIN_QQ = (
-    '412632991',    # yuki
-    '821578041',    # rui
-)
-
 qqbot = CQBot(11235)
-# scheduler = BackgroundScheduler(
-#     timezone='Asia/Tokyo',
-#     job_defaults={'misfire_grace_time': 60},
-#     )
+POI_GROUP = '378320628'
+ADMIN = []
+
+with open('admin.json', 'r', encoding="utf-8") as f:
+    data = json.loads(f.read())
+    ADMIN = data
+
 
 Message = namedtuple('Manifest', ('qq', 'time', 'text'))
 messages = []
@@ -30,15 +28,13 @@ messages = []
 
 @qqbot.listener((RcvdGroupMessage, ))
 def blacklist(message):
-    # Restrict to Poi group
-    if isinstance(message, RcvdGroupMessage) and message.group != POI_GROUP:
-        return True
+    return message.group != POI_GROUP
 
 
 @qqbot.listener((RcvdGroupMessage, RcvdPrivateMessage))
 def command(message):
     # Restrict to admin
-    if message.qq not in ADMIN_QQ:
+    if message.qq not in ADMIN:
         return
     # Parse message
     try:
@@ -68,7 +64,7 @@ def command(message):
             item = items[i]
         except:
             continue
-        reply(qqbot, message, "[awd] {qq} # {i}\n{text}".format(
+        reply(qqbot, message, "[awd] {qq} #{i}\n{text}".format(
                 i=i, qq=CQAt(item.qq), text=item.text))
 
 
