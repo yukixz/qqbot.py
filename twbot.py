@@ -4,6 +4,7 @@
 import json
 import os
 import re
+import traceback
 from datetime import datetime, timezone, timedelta
 
 import requests
@@ -11,8 +12,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from requests_oauthlib import OAuth1Session
 
 import utils
-from utils import CQ_IMAGE_ROOT, error, FileDownloader
-from cqsdk import CQBot, CQImage, SendGroupMessage
+from utils import CQ_IMAGE_ROOT, info, error, FileDownloader
+from cqsdk import CQBot, CQImage, SendGroupMessage, SendPrivateMessage
 
 
 qqbot = CQBot(11235, online=False)
@@ -29,9 +30,13 @@ with open('twitter.json', 'r') as f:
         resource_owner_key=data['access_token'],
         resource_owner_secret=data['access_secret'],
     )
-    NOTIFY_GROUPS = data['notify_groups']
+    NOTIFY = data['notify']
 
-REQUESTS_PROXIED = {
+REQUESTS_OPTIONS = {
+    'timeout': 10,
+}
+REQUESTS_OPTIONS_PROXIED = {
+    **REQUESTS_OPTIONS,
     'proxies': {
         'http': 'socks5://127.0.0.1:1080',
         'https': 'socks5://127.0.0.1:1080',
@@ -43,75 +48,88 @@ REQUESTS_PROXIED = {
 # Timeline
 # Assume no posting 20+ tweet in a minute.
 ################
-class TL:
+TEMPLATE_TWITTER = {
+    **REQUESTS_OPTIONS_PROXIED,
+    'url': "https://api.twitter.com/1.1/statuses/user_timeline.json",
+    'params': {
+        "screen_name": "KanColle_STAFF",
+        "count": 20,
+    },
+}
+TEMPLATE_KCWIKI = {
+    'url': "http://api.kcwiki.moe/tweet/20",
+}
+
+
+class Twitter:
     tweets = {}
-    twitter_inited = False
-    twitter = {
-        'url': "https://api.twitter.com/1.1/statuses/user_timeline.json",
-        'params': {
-            "screen_name": "KanColle_STAFF",
-            "trim_user": 1,
-            "count": 20,
-        },
-    }
-    kcwiki_inited = False
-    kcwiki = {
-        'url': "http://api.kcwiki.moe/tweet/20",
-    }
+    inited = {}
     html_tag = re.compile(r'<\w+.*?>|</\w+>')
     image_subdir = 'twitter'
 
-utils.mkdir(os.path.join(CQ_IMAGE_ROOT, TL.image_subdir))
+utils.mkdir(os.path.join(CQ_IMAGE_ROOT, Twitter.image_subdir))
 
 
 class Tweet:
     def __init__(self, id_):
         self.id_ = id_
+        self.user = None
         self.date = None
         self.ja = ''
         self.zh = ''
         self.media = []
 
     def __str__(self):
-        if self.date is None:
-            error("Stringify `Tweet` before assgin `Tweet.date`.")
-            raise ValueError(self)
+        if self.user is None or self.date is None:
+            error("Stringify `Tweet` without `user` or `date`.")
+            raise ValueError()
         dt = self.date.astimezone(timezone(timedelta(hours=9)))
         ds = datetime.strftime(dt, "%Y-%m-%d %H:%M:%S JST")
-        results = ["「艦これ」開発/運営", ds]
+        results = [self.user, ds]
         for t in [self.ja, self.zh]:
             if len(t) == 0:
                 continue
-            # Fix gbk encoding
+            # Fix GBK encoding
             t = t.replace('・', '·')
             t = t.replace('✕', '×')
             t = t.replace('#艦これ', '')
+            t = t.replace('#千年戦争アイギス', '')
             results.extend(['', t.strip()])
         results.extend([str(m) for m in self.media])
         return '\n'.join(results)
 
 
 @scheduler.scheduled_job('cron', minute='*', second='10')
-def poll_twitter():
-    resp = session.get(**TL.twitter, **REQUESTS_PROXIED)
+def poll_twitter_all():
+    for user in ["KanColle_STAFF", "Aigis1000"]:
+        try:
+            poll_twitter(user)
+        except:
+            traceback.print_exc()
+
+
+def poll_twitter(user):
+    Template = dict(TEMPLATE_TWITTER)
+    Template['params']['screen_name'] = user
+
+    resp = session.get(**Template)
     if resp.status_code != 200:
-        print("[twitter]", "Response not success", resp)
+        print(user, "Response not success", resp)
     posts = resp.json()
     posts.reverse()
 
     for post in posts:
         id_ = post['id_str']
         text = post['text']
-        tweet = TL.tweets.get(id_, Tweet(id_))
+        tweet = Twitter.tweets.get(id_, Tweet(id_))
         if len(text) == 0:
             continue
         if len(tweet.ja) > 0:
             continue
 
-        date = datetime.strptime(
+        tweet.user = post['user']['name']
+        tweet.date = datetime.strptime(
             post['created_at'], "%a %b %d %H:%M:%S %z %Y")
-        if tweet.date is None or date < tweet.date:
-            tweet.date = date
         for ent in post['entities'].get('urls', []):
             text = text.replace(ent['url'], ent['expanded_url'])
         for ent in post['entities'].get('media', []):
@@ -121,29 +139,36 @@ def poll_twitter():
             FileDownloader(
                 url=url,
                 path=os.path.join(
-                    CQ_IMAGE_ROOT, TL.image_subdir, filename),
-                requests_kwargs=REQUESTS_PROXIED,
+                    CQ_IMAGE_ROOT, Twitter.image_subdir, filename),
+                requests_kwargs=REQUESTS_OPTIONS_PROXIED,
             ).run()
             tweet.media.append(
-                CQImage(os.path.join(TL.image_subdir, filename)))
+                CQImage(os.path.join(Twitter.image_subdir, filename)))
         tweet.ja = text
-        TL.tweets[id_] = tweet
+        Twitter.tweets[id_] = tweet
 
-        if TL.twitter_inited:
+        if Twitter.inited.get(user):
             text = str(tweet)
-            for g in NOTIFY_GROUPS:
-                qqbot.send(SendGroupMessage(group=g, text=text))
+            info(text)
+            for notify in NOTIFY:
+                if user not in notify.get('type'):
+                    continue
+                for q in notify.get('qq', []):
+                    qqbot.send(SendPrivateMessage(qq=q, text=text))
+                for g in notify.get('group', []):
+                    qqbot.send(SendGroupMessage(group=g, text=text))
 
-    if not TL.twitter_inited:
-        TL.twitter_inited = True
-        print("[twitter]", "init", len(posts))
+    if not Twitter.inited.get(user):
+        Twitter.inited[user] = True
+        print(user, "init", len(posts))
 
 
 @scheduler.scheduled_job('cron', minute='*', second='30')
 def poll_kcwiki():
-    resp = requests.get(**TL.kcwiki)
+    user = 'kcwiki'
+    resp = requests.get(**TEMPLATE_KCWIKI)
     if resp.status_code != 200:
-        print("[kcwiki]", "Response not success", resp)
+        print(user, "Response not success", resp)
         return
     posts = resp.json()
     posts.reverse()
@@ -151,28 +176,38 @@ def poll_kcwiki():
     for post in posts:
         id_ = post['id']
         text = post['zh']
-        tweet = TL.tweets.get(id_, Tweet(id_))
+        tweet = Twitter.tweets.get(id_, Tweet(id_))
         if len(text) == 0:
             continue
         if len(tweet.zh) > 0:
             continue
 
+        text = Twitter.html_tag.sub('', text)
+        tweet.zh = text
+        Twitter.tweets[id_] = tweet
+
+        # Dont post old translation.
         date = datetime.strptime(post['date'], "%Y-%m-%d %H:%M:%S") \
                        .replace(tzinfo=timezone(timedelta(hours=8)))
-        if tweet.date is None or date < tweet.date:
-            tweet.date = date
-        text = TL.html_tag.sub('', text)
-        tweet.zh = text
-        TL.tweets[id_] = tweet
+        now = datetime.utcnow() \
+                      .replace(tzinfo=timezone(timedelta(hours=0)))
+        if now - date > timedelta(hours=2):
+            continue
 
-        if TL.kcwiki_inited:
+        if Twitter.inited.get(user):
             text = str(tweet)
-            for g in NOTIFY_GROUPS:
-                qqbot.send(SendGroupMessage(group=g, text=text))
+            info(text)
+            for notify in NOTIFY:
+                if 'KanColle_STAFF' not in notify.get('type'):
+                    continue
+                for q in notify.get('qq', []):
+                    qqbot.send(SendPrivateMessage(qq=q, text=text))
+                for g in notify.get('group', []):
+                    qqbot.send(SendGroupMessage(group=g, text=text))
 
-    if not TL.kcwiki_inited:
-        TL.kcwiki_inited = True
-        print("[kcwiki]", "init", len(posts))
+    if not Twitter.inited.get(user):
+        Twitter.inited[user] = True
+        print(user, "init", len(posts))
 
 
 ################
@@ -194,14 +229,14 @@ def poll_avatar():
     resp = session.get(
         url=Avatar.twitter_url,
         params=Avatar.twitter_params,
-        **REQUESTS_PROXIED)
+        **REQUESTS_OPTIONS_PROXIED)
 
     if resp.status_code == 200:
         user = resp.json()
         url = Avatar.image_prog.sub(
             Avatar.image_repl, user['profile_image_url_https'])
     else:
-        error("[avatar]", "Response failed:", resp.status_code, resp.text)
+        error("[Avatar]", "Response failed:", resp.status_code, resp.text)
         return
 
     if Avatar.latest is None:
@@ -216,7 +251,7 @@ def poll_avatar():
             url=url,
             path=os.path.join(
                 CQ_IMAGE_ROOT, Avatar.image_subdir, filename),
-            requests_kwargs=REQUESTS_PROXIED
+            requests_kwargs=REQUESTS_OPTIONS_PROXIED
         ).run()
         Avatar.latest = url
 
@@ -225,8 +260,11 @@ def poll_avatar():
             "【アイコン変更】",
             str(CQImage(os.path.join(Avatar.image_subdir, filename)))
         ])
-        for g in NOTIFY_GROUPS:
-            qqbot.send(SendGroupMessage(group=g, text=text))
+        for notify in NOTIFY:
+            if '*Avatar' not in notify.get('type'):
+                continue
+            for g in notify['group']:
+                qqbot.send(SendGroupMessage(group=g, text=text))
 
 
 ################

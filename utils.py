@@ -15,6 +15,11 @@ from cqsdk import RE_CQ_SPECIAL, \
 CQ_IMAGE_ROOT = r'C:/Users/Dazzy/Desktop/CoolQ/data/image'
 
 
+def info(*args, **kwargs):
+    print("================ INFO  ================", file=sys.stderr)
+    print(*args, **kwargs, file=sys.stderr)
+
+
 def error(*args, **kwargs):
     print("================ ERROR ================", file=sys.stderr)
     print(*args, **kwargs, file=sys.stderr)
