@@ -1,10 +1,16 @@
 {
-   "consumer_key": "",
-   "consumer_secret": "",
-   "access_token": "",
-   "access_secret": "",
-   "notify_groups": [
-      "378320628",
-      "489722633"
-   ]
+    "consumer_key": "",
+    "consumer_secret": "",
+    "access_token": "",
+    "access_secret": "",
+    "notify": [
+        {
+            "group": ["378320628"],
+            "type": ["*Avatar", "KanColle_STAFF", "Aigis1000"]
+        },
+        {
+            "group": ["457200342", "489722633"],
+            "type": ["*Avatar", "KanColle_STAFF"]
+        }
+    ]
 }

@@ -2,7 +2,7 @@
   {
     "keywords": ["下载", "哪里下", "版本", "最新版", "稳定版"],
     "whitelist": ["qq"],
-    "message": "poi 下载地址：https://poi.io\n最新稳定版：7.1.0\n最新测试版：-"
+    "message": "poi 下载地址：https://poi.io\n最新稳定版：7.1.0\n最新测试版：7.2.0-beta.3"
   },
   {
     "keywords": ["掉落", "掉率", "哪里掉"],
