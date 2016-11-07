@@ -50,8 +50,6 @@ def restriction(message):
         return message.group != POI_GROUP
     if message.group != POI_GROUP:
         return True
-    if message.qq in ADMIN:
-        return True
     if message.qq in BLACKLIST_USERS:
         return True
     # else
@@ -60,9 +58,8 @@ def restriction(message):
 
 @qqbot.listener((RcvdGroupMessage, ))
 def blacklist(message):
-    if match(message.text.lower(), BANNED_WORDS):
+    if match(message.text.lower(), BANNED_WORDS) and message.qq not in ADMIN:
         qqbot.send(GroupBan(message.group, message.qq, 60))
-        print("!!", GroupBan(message.group, message.qq, 60))
         return True
     if match(message.text.lower(), BLACKLIST_WORDS):
         return True
