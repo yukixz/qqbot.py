@@ -1,10 +1,13 @@
 {
   "banned-words": [
-    "冬马小三",
-    "冬三",
-    "雪菜碧池",
-    "雪碧",
-    "我要搞事"
+    {
+      "keywords": ["我要搞事"],
+      "duration": 1
+    },
+    {
+      "keywords": ["操咩", "草咩", "艹咩", "日咩", "曰咩", "rbq咩", "口羊"],
+      "duration": 10
+    }
   ],
   "blacklist-words": [
     "av",

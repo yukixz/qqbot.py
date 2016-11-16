@@ -5,7 +5,7 @@ import json
 import random
 import time
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -28,8 +28,11 @@ scheduler = BackgroundScheduler(
 # Restriction
 ################
 POI_GROUP = '378320628'
+BANNED_MAX_DURATION = 1440
+BANNED_RESET_TIME = timedelta(hours=12)
 ADMIN = []
 BANNED_WORDS = []
+BANNED_RECORDS = {}
 BLACKLIST_WORDS = []
 BLACKLIST_USERS = []
 
@@ -42,6 +45,12 @@ with open('poi.json', 'r', encoding="utf-8") as f:
     BANNED_WORDS = data.get("banned-words", [])
     BLACKLIST_WORDS = data.get("blacklist-words", [])
     BLACKLIST_USERS = data.get("blacklist-users", [])
+
+
+class BanRecord():
+    def __init__(self, count=0, last=datetime.utcnow()):
+        self.count = count
+        self.last = last
 
 
 @qqbot.listener((RcvdGroupMessage, GroupMemberIncrease, GroupMemberDecrease))
@@ -57,11 +66,27 @@ def restriction(message):
 
 
 @qqbot.listener((RcvdGroupMessage, ))
-def blacklist(message):
-    if match(message.text.lower(), BANNED_WORDS) and message.qq not in ADMIN:
-        qqbot.send(GroupBan(message.group, message.qq, 60))
-        return True
-    if match(message.text.lower(), BLACKLIST_WORDS):
+def keywords(message):
+    lower_text = message.text.lower()
+    if message.qq not in ADMIN:
+        if message.qq not in BANNED_RECORDS:
+            BANNED_RECORDS[message.qq] = BanRecord()
+        utcnow = datetime.utcnow()
+        record = BANNED_RECORDS[message.qq]
+        if utcnow - record.last > BANNED_RESET_TIME:
+            record = BanRecord()
+        for o in BANNED_WORDS:
+            keywords = o.get('keywords', [])
+            duration = o.get('duration', 10)
+            if match(lower_text, keywords):
+                record.count += 1
+                record.last = utcnow
+                duration *= 2 ** (record.count - 1)
+                if duration > BANNED_MAX_DURATION:
+                    duration = BANNED_MAX_DURATION
+                qqbot.send(GroupBan(message.group, message.qq, duration * 60))
+                return True
+    if match(lower_text, BLACKLIST_WORDS):
         return True
     # else
     return False
