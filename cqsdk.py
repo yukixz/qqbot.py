@@ -139,7 +139,7 @@ class APIServer(socketserver.UDPServer):
 
 
 class CQBot():
-    def __init__(self, server_port, client_port=0, online=True):
+    def __init__(self, server_port, client_port=0, online=True, debug=False):
         self.listeners = []
 
         self.remote_addr = ("127.0.0.1", server_port)
@@ -152,6 +152,10 @@ class CQBot():
         #   True: Retrive message from socket API server
         #   False: Send message only
         self.online = online
+
+        # Debug Mode
+        #   True: print message instead of sending.
+        self.debug = debug
 
     def __del__(self):
         self.client.close()
@@ -185,6 +189,9 @@ class CQBot():
         return decorator
 
     def send(self, message):
+        if self.debug:
+            print(message)
+            return
         data = dump_frame(message).encode()
         self.client.sendto(data, self.remote_addr)
 
