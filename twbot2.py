@@ -15,7 +15,7 @@ from cqsdk import CQBot, CQImage, SendGroupMessage, SendPrivateMessage
 
 qqbot = CQBot(11235, online=False)
 
-with open('twitter2.json', 'r') as f:
+with open('twitter.json', 'r') as f:
     data = json.loads(f.read())
     NOTIFY = data['notify']
 
