@@ -31,16 +31,19 @@ GroupMemberIncrease = namedtuple("GroupMemberIncrease",
                                  ("group", "qq", "operatedQQ"))
 GroupBan = namedtuple("GroupBan", ("group", "qq", "duration"))
 
+Fatal = namedtuple("Fatal", ("text"))
+
 FrameType = namedtuple("FrameType", ("prefix", "rcvd", "send"))
 FRAME_TYPES = (
     FrameType("ClientHello", (), ClientHello),
     FrameType("ServerHello", ServerHello, ()),
     FrameType("PrivateMessage", RcvdPrivateMessage, SendPrivateMessage),
-    FrameType("GroupMessage", RcvdGroupMessage, SendGroupMessage),
     FrameType("DiscussMessage", RcvdDiscussMessage, SendDiscussMessage),
+    FrameType("GroupMessage", RcvdGroupMessage, SendGroupMessage),
     FrameType("GroupMemberDecrease", GroupMemberDecrease, ()),
     FrameType("GroupMemberIncrease", GroupMemberIncrease, ()),
     FrameType("GroupBan", (), GroupBan),
+    FrameType("Fatal", (), Fatal),
 )
 
 RE_CQ_SPECIAL = re.compile(r'\[CQ:\w+(,.+?)?\]')
@@ -80,8 +83,8 @@ def load_frame(data):
         if prefix == type_.prefix:
             frame = type_.rcvd(*payload)
     # decode text
-    if isinstance(frame,
-                  (RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage)):
+    if isinstance(frame, (
+            RcvdPrivateMessage, RcvdGroupMessage, RcvdDiscussMessage)):
         payload[-1] = b64decode(payload[-1]).decode('gbk')
         frame = type(frame)(*payload)
     return frame
@@ -95,8 +98,8 @@ def dump_frame(frame):
     payload = list(map(lambda x: str(x), frame))
 
     # encode text
-    if isinstance(frame,
-                  (SendPrivateMessage, SendGroupMessage, SendDiscussMessage)):
+    if isinstance(frame, (
+            SendPrivateMessage, SendGroupMessage, SendDiscussMessage, Fatal)):
         payload[-1] = b64encode(payload[-1].encode('gbk')).decode()
 
     data = None
@@ -181,7 +184,7 @@ class CQBot():
         while True:
             host, port = self.server.server_address
             self.send(ClientHello(port))
-            time.sleep(120)
+            time.sleep(30)
 
     def listener(self, frame_type):
         def decorator(handler):
