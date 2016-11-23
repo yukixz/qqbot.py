@@ -20,7 +20,7 @@ with open('twitter.json', 'r') as f:
     NOTIFY = data['notify']
 
 REQUESTS_OPTIONS_PROXIED = {
-    'timeout': 10,
+    'timeout': 60,
     'proxies': {
         'http': 'socks5://127.0.0.1:1080',
         'https': 'socks5://127.0.0.1:1080',
