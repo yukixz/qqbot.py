@@ -15,7 +15,6 @@ from utils import CQ_IMAGE_ROOT, error, reply
 
 qqbot = CQBot(11235)
 POI_GROUP = '378320628'
-ADMIN = []
 
 with open('admin.json', 'r', encoding="utf-8") as f:
     data = json.loads(f.read())

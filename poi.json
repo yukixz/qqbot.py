@@ -1,4 +1,8 @@
 {
+  "ignored-users": [
+    "3031881254",
+    "3383845957"
+  ],
   "banned-words": [
     {
       "keywords": ["我要搞事"],
@@ -9,7 +13,7 @@
       "duration": 10
     }
   ],
-  "blacklist-words": [
+  "ignored-words": [
     "av",
     "gv",
     "傻",
@@ -24,10 +28,6 @@
     "公共便所",
     "强奸",
     "强暴"
-  ],
-  "blacklist-users": [
-    "3031881254",
-    "3383845957"
   ],
   "notification": {
     "0": "00:00 JST. 改修工厂已更新",

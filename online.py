@@ -59,7 +59,7 @@ def check():
     ONLINE.notified_last = last
     text = '\n'.join([
         "** WARNING **",
-        "No message in {tolerance}. Restarting CoolQ.",
+        "No message for {tolerance}. Restarting CoolQ.",
         "If you don't receive finish message in 2 mintues, "  # No comma
         "send /online to check or restart manually."
         ]).format(tolerance=ONLINE.TOLERANCE)

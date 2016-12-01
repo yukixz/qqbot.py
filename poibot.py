@@ -29,12 +29,8 @@ scheduler = BackgroundScheduler(
 ################
 POI_GROUP = '378320628'
 BANNED_MAX_DURATION = 1440
-BANNED_RESET_TIME = timedelta(hours=12)
-ADMIN = []
-BANNED_WORDS = []
+BANNED_RESET_TIME = timedelta(hours=20)
 BANNED_RECORDS = {}
-BLACKLIST_WORDS = []
-BLACKLIST_USERS = []
 
 with open('admin.json', 'r', encoding="utf-8") as f:
     data = json.loads(f.read())
@@ -43,11 +39,11 @@ with open('admin.json', 'r', encoding="utf-8") as f:
 with open('poi.json', 'r', encoding="utf-8") as f:
     data = json.loads(f.read())
     BANNED_WORDS = data.get("banned-words", [])
-    BLACKLIST_WORDS = data.get("blacklist-words", [])
-    BLACKLIST_USERS = data.get("blacklist-users", [])
+    IGNORED_WORDS = data.get("ignored-words", [])
+    IGNORED_USERS = data.get("ignored-users", [])
 
 
-class BanRecord():
+class BanRecord:
     def __init__(self, count=0, last=datetime.utcnow()):
         self.count = count
         self.last = last
@@ -59,7 +55,7 @@ def restriction(message):
         return message.group != POI_GROUP
     if message.group != POI_GROUP:
         return True
-    if message.qq in BLACKLIST_USERS:
+    if message.qq in IGNORED_USERS:
         return True
     # else
     return False
@@ -86,7 +82,7 @@ def keywords(message):
                     duration = BANNED_MAX_DURATION
                 qqbot.send(GroupBan(message.group, message.qq, duration * 60))
                 return True
-    if match(lower_text, BLACKLIST_WORDS):
+    if match(lower_text, IGNORED_WORDS):
         return True
     # else
     return False
