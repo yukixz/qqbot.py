@@ -3,6 +3,7 @@
 
 import json
 import random
+import re
 import time
 from collections import deque
 from datetime import datetime, timedelta
@@ -30,7 +31,8 @@ scheduler = BackgroundScheduler(
 POI_GROUP = '378320628'
 BANNED_MAX_DURATION = 1440
 BANNED_RESET_TIME = timedelta(hours=20)
-BANNED_RECORDS = {}
+BAN_PATTERN = re.compile(r'\((\d+)\) *被管理员禁言')
+UNBAN_PATTERN = re.compile(r'\((\d+)\) *被管理员解除禁言')
 
 with open('admin.json', 'r', encoding="utf-8") as f:
     data = json.loads(f.read())
@@ -44,9 +46,17 @@ with open('poi.json', 'r', encoding="utf-8") as f:
 
 
 class BanRecord:
+    records = {}
+
     def __init__(self, count=0, last=datetime.utcnow()):
         self.count = count
         self.last = last
+
+    @classmethod
+    def get(cls, qq):
+        if qq not in cls.records:
+            cls.records[qq] = BanRecord()
+        return cls.records[qq]
 
 
 @qqbot.listener((RcvdGroupMessage, GroupMemberIncrease, GroupMemberDecrease))
@@ -62,30 +72,45 @@ def restriction(message):
 
 
 @qqbot.listener((RcvdGroupMessage, ))
-def keywords(message):
+def words(message):
     lower_text = message.text.lower()
+    # Ban
     if message.qq not in ADMIN:
-        if message.qq not in BANNED_RECORDS:
-            BANNED_RECORDS[message.qq] = BanRecord()
-        utcnow = datetime.utcnow()
-        record = BANNED_RECORDS[message.qq]
-        if utcnow - record.last > BANNED_RESET_TIME:
+        record = BanRecord.get(message.qq)
+        now = datetime.utcnow()
+        if now - record.last > BANNED_RESET_TIME:
             record = BanRecord()
         for o in BANNED_WORDS:
             keywords = o.get('keywords', [])
             duration = o.get('duration', 10)
             if match(lower_text, keywords):
                 record.count += 1
-                record.last = utcnow
+                record.last = now
                 duration *= 2 ** (record.count - 1)
                 if duration > BANNED_MAX_DURATION:
                     duration = BANNED_MAX_DURATION
                 qqbot.send(GroupBan(message.group, message.qq, duration * 60))
                 return True
+    # Ignore
     if match(lower_text, IGNORED_WORDS):
         return True
     # else
     return False
+
+
+@qqbot.listener((RcvdGroupMessage, ))
+def manual_ban(message):
+    if message.qq != '1000000':
+        return
+    now = datetime.utcnow()
+    m = BAN_PATTERN.search(message.text)
+    if m is not None:
+        qq = m.group(1)
+        print("QQ {} is banned manually".format(qq))
+        record = BanRecord.get(qq)
+        record.count += 1
+        record.last = now
+
 
 
 ################
@@ -258,8 +283,6 @@ def join(message):
 ################
 # notify
 ################
-NOTIFY_HOURLY = {}
-
 with open('poi.json', 'r', encoding="utf-8") as f:
     data = json.loads(f.read())
     NOTIFY_HOURLY = data.get('notification', {})
@@ -274,7 +297,7 @@ def notify_hourly():
 
 
 @scheduler.scheduled_job('cron', hour='2,14', minute='0,30,40,50')
-def notify_pratice():
+def notify_practice():
     qqbot.send(SendGroupMessage(
         group=POI_GROUP, text="演习快刷新啦、赶紧打演习啦！"))
 
