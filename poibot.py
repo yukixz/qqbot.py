@@ -52,9 +52,15 @@ class BanRecord:
         self.count = count
         self.last = last
 
+    def increase(self):
+        self.count += 1
+        self.last = datetime.now()
+
     @classmethod
     def get(cls, qq):
         if qq not in cls.records:
+            cls.records[qq] = BanRecord()
+        if datetime.utcnow() - cls.records[qq].last > BANNED_RESET_TIME:
             cls.records[qq] = BanRecord()
         return cls.records[qq]
 
@@ -77,18 +83,12 @@ def words(message):
     # Ban
     if message.qq not in ADMIN:
         record = BanRecord.get(message.qq)
-        now = datetime.utcnow()
-        if now - record.last > BANNED_RESET_TIME:
-            record = BanRecord()
         for o in BANNED_WORDS:
             keywords = o.get('keywords', [])
             duration = o.get('duration', 10)
             if match(lower_text, keywords):
-                record.count += 1
-                record.last = now
-                duration *= 2 ** (record.count - 1)
-                if duration > BANNED_MAX_DURATION:
-                    duration = BANNED_MAX_DURATION
+                duration *= 2 ** record.count
+                duration = duration if duration > 0 else 1
                 qqbot.send(GroupBan(message.group, message.qq, duration * 60))
                 return True
     # Ignore
@@ -102,15 +102,12 @@ def words(message):
 def manual_ban(message):
     if message.qq != '1000000':
         return
-    now = datetime.utcnow()
     m = BAN_PATTERN.search(message.text)
     if m is not None:
         qq = m.group(1)
-        print("QQ {} is banned manually".format(qq))
+        print("QQ {} is banned.".format(qq))
         record = BanRecord.get(qq)
-        record.count += 1
-        record.last = now
-
+        record.increase()
 
 
 ################
