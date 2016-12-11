@@ -59,6 +59,7 @@ class Tweet:
             # Fix GBK encoding
             t = t.replace('・', '·')
             t = t.replace('✕', '×')
+            t = t.replace('♪', '')
             t = t.replace('#艦これ', '')
             t = t.replace('#千年戦争アイギス', '')
             results.extend(['', t.strip()])
