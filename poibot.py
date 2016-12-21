@@ -64,6 +64,17 @@ class BanRecord:
             cls.records[qq] = BanRecord()
         return cls.records[qq]
 
+    @classmethod
+    def top(cls, n=10):
+        # Refresh records
+        for qq in cls.records.keys():
+            cls.get(qq)
+        # Sort records
+        items = sorted(cls.records.items(),
+                       key=lambda i: i[1].count,
+                       reverse=True)
+        return items[:n]
+
 
 @qqbot.listener((RcvdGroupMessage, GroupMemberIncrease, GroupMemberDecrease))
 def restriction(message):
@@ -99,7 +110,7 @@ def words(message):
 
 
 @qqbot.listener((RcvdGroupMessage, ))
-def manual_ban(message):
+def banned(message):
     if message.qq != '1000000':
         return
     m = BAN_PATTERN.search(message.text)
@@ -108,6 +119,20 @@ def manual_ban(message):
         print("QQ {} is banned.".format(qq))
         record = BanRecord.get(qq)
         record.increase()
+
+
+@qqbot.listener((RcvdGroupMessage, ))
+def bantop(message):
+    if not (message.text == '/bantop' and message.qq in ADMIN):
+        return
+    topN = BanRecord.top()
+    texts = ["禁言排名前十"]
+    for qq, record in topN:
+        texts.append("{qq} {count}".format(
+            qq=CQAt(qq), count=record.count))
+    text = '\n'.join(texts)
+    reply(qqbot, message, text)
+    return True
 
 
 ################
@@ -209,7 +234,7 @@ def roll(message):
 ################
 # repeat
 ################
-REPEAT_QUEUE_SIZE = 20
+REPEAT_QUEUE_SIZE = 32
 REPEAT_COUNT_MIN = 2
 REPEAT_COUNT_MAX = 4
 queue = deque()
@@ -223,7 +248,7 @@ class QueueMessage:
         self.repeated = False
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage))
+@qqbot.listener((RcvdGroupMessage, ))
 def repeat(message):
     text = message.text
     sender = message.qq
@@ -246,6 +271,13 @@ def repeat(message):
     queue.appendleft(msg)
     if len(queue) > REPEAT_QUEUE_SIZE:
         queue.pop()
+
+    # Ban4 event
+    if msg.repeated and sender not in ADMIN and random.randint(1, 3) == 1:
+        record = BanRecord.get(sender)
+        duration = 2 ** record.count * 1
+        duration = duration if duration > 0 else 1
+        qqbot.send(GroupBan(message.group, sender, duration * 60))\
 
     # Repeat message
     if msg.repeated or msg.count < REPEAT_COUNT_MIN:
