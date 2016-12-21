@@ -310,28 +310,6 @@ def join(message):
 
 
 ################
-# notify
-################
-with open('poi.json', 'r', encoding="utf-8") as f:
-    data = json.loads(f.read())
-    NOTIFY_HOURLY = data.get('notification', {})
-
-
-@scheduler.scheduled_job('cron', hour='*')
-def notify_hourly():
-    hour = str(datetime.now(pytz.timezone("Asia/Tokyo")).hour)
-    text = NOTIFY_HOURLY.get(hour, '')
-    if text:
-        qqbot.send(SendGroupMessage(group=POI_GROUP, text=text))
-
-
-@scheduler.scheduled_job('cron', hour='2,14', minute='0,30,40,50')
-def notify_practice():
-    qqbot.send(SendGroupMessage(
-        group=POI_GROUP, text="演习快刷新啦、赶紧打演习啦！"))
-
-
-################
 # __main__
 ################
 if __name__ == '__main__':
