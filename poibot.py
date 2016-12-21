@@ -2,19 +2,16 @@
 # coding: UTF-8
 
 import json
+import pickle
 import random
 import re
 import time
 from collections import deque
 from datetime import datetime, timedelta
 
-import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
-from cqsdk import CQBot, CQAt, RE_CQ_SPECIAL, \
-    RcvdPrivateMessage, RcvdGroupMessage, \
-    SendPrivateMessage, SendGroupMessage, \
-    GroupMemberDecrease, GroupMemberIncrease, \
-    GroupBan
+from cqsdk import CQBot, CQAt, RE_CQ_SPECIAL, RcvdPrivateMessage, \
+    RcvdGroupMessage, SendGroupMessage, GroupMemberIncrease, GroupBan
 from utils import match, reply
 
 
@@ -76,9 +73,9 @@ class BanRecord:
         return items[:n]
 
 
-@qqbot.listener((RcvdGroupMessage, GroupMemberIncrease, GroupMemberDecrease))
+@qqbot.listener((RcvdGroupMessage, GroupMemberIncrease))
 def restriction(message):
-    if isinstance(message, (GroupMemberIncrease, GroupMemberDecrease)):
+    if isinstance(message, (GroupMemberIncrease, )):
         return message.group != POI_GROUP
     if message.group != POI_GROUP:
         return True
@@ -111,22 +108,30 @@ def words(message):
 
 @qqbot.listener((RcvdGroupMessage, ))
 def banned(message):
+    return  # Disabled for BAN event (TODO)
     if message.qq != '1000000':
         return
     m = BAN_PATTERN.search(message.text)
     if m is not None:
         qq = m.group(1)
-        print("QQ {} is banned.".format(qq))
         record = BanRecord.get(qq)
         record.increase()
+        print("Banned: QQ {0} x {1}".format(qq, record.count))
 
 
-@qqbot.listener((RcvdGroupMessage, ))
+@qqbot.listener((RcvdGroupMessage, RcvdPrivateMessage, ))
 def bantop(message):
-    if not (message.text == '/bantop' and message.qq in ADMIN):
+    if message.qq not in ADMIN:
         return
-    topN = BanRecord.top()
-    texts = ["禁言排名前十"]
+    texts = message.text.split()
+    if not(len(texts) > 0 and texts[0] == '/bantop'):
+        return
+    try:
+        n = int(texts[1])
+    except:
+        n = 4
+    topN = BanRecord.top(n)
+    texts = ["**** 禁言次数排名 ****"]
     for qq, record in topN:
         texts.append("{qq} {count}".format(
             qq=CQAt(qq), count=record.count))
@@ -156,7 +161,7 @@ with open('faq.json', 'r', encoding="utf-8") as f:
         FAQ.append(FAQObject(jfaq))
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage))
+@qqbot.listener((RcvdGroupMessage, ))
 def faq(message):
     text = message.text.lower()
     now = time.time()
@@ -187,7 +192,7 @@ ROLL_SEPARATOR = ','
 ROLL_HELP = "[roll] 有效范围为 {} ~ {}".format(ROLL_LOWER, ROLL_UPPER)
 
 
-@qqbot.listener((RcvdPrivateMessage, RcvdGroupMessage))
+@qqbot.listener((RcvdGroupMessage, ))
 def roll(message):
     texts = message.text.split()
     if not (len(texts) > 0 and texts[0] == '/roll'):
@@ -248,6 +253,17 @@ class QueueMessage:
         self.repeated = False
 
 
+class RandomQueue:
+    queue = []
+
+    @classmethod
+    def next(cls):
+        if len(cls.queue) == 0:
+            cls.queue = 2 * [True, False, False]
+            random.shuffle(cls.queue)
+        return cls.queue.pop()
+
+
 @qqbot.listener((RcvdGroupMessage, ))
 def repeat(message):
     text = message.text
@@ -273,7 +289,7 @@ def repeat(message):
         queue.pop()
 
     # Ban4 event
-    if msg.repeated and sender not in ADMIN and random.randint(1, 3) == 1:
+    if msg.repeated and sender not in ADMIN and RandomQueue.next():
         record = BanRecord.get(sender)
         duration = 2 ** record.count * 1
         duration = duration if duration > 0 else 1
@@ -307,6 +323,24 @@ def join(message):
 #         text="{} 畏罪潜逃了".format(
 #             CQAt(message.operatedQQ))
 #     ))
+
+
+################
+# Persistence
+################
+PFILE = './persistence.txt'
+
+try:
+    with open(PFILE, 'rb') as f:
+        BanRecord.records = pickle.load(f)
+except FileNotFoundError:
+    pass
+
+
+@scheduler.scheduled_job('cron', minute='*')
+def persistence():
+    with open(PFILE, 'wb') as f:
+        pickle.dump(BanRecord.records, f)
 
 
 ################
