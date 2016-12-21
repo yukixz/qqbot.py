@@ -66,10 +66,11 @@ class BanRecord:
         # Refresh records
         for qq in cls.records.keys():
             cls.get(qq)
+        items = cls.records.items()
+        # Filter records
+        items = filter(lambda i: i[1].count > 0, items)
         # Sort records
-        items = sorted(cls.records.items(),
-                       key=lambda i: i[1].count,
-                       reverse=True)
+        items = sorted(items, key=lambda i: i[1].count, reverse=True)
         return items[:n]
 
 
@@ -93,7 +94,7 @@ def words(message):
         record = BanRecord.get(message.qq)
         for o in BANNED_WORDS:
             keywords = o.get('keywords', [])
-            duration = o.get('duration', 10)
+            duration = o.get('duration', 1)
             if match(lower_text, keywords):
                 duration *= 2 ** record.count
                 duration = duration if duration > 0 else 1
@@ -108,7 +109,6 @@ def words(message):
 
 @qqbot.listener((RcvdGroupMessage, ))
 def banned(message):
-    return  # Disabled for BAN event (TODO)
     if message.qq != '1000000':
         return
     m = BAN_PATTERN.search(message.text)
