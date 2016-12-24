@@ -53,6 +53,16 @@ class BanRecord:
         self.count += 1
         self.last = datetime.now()
 
+    def decrease(self):
+        self.count -= 1
+
+    @property
+    def multiply(self, base=1):
+        multiply = base * self.count ** 2
+        if multiply <= 0:
+            multiply = 1
+        return multiply
+
     @classmethod
     def get(cls, qq):
         if qq not in cls.records:
@@ -96,8 +106,7 @@ def words(message):
             keywords = o.get('keywords', [])
             duration = o.get('duration', 1)
             if match(lower_text, keywords):
-                duration *= 2 ** record.count
-                duration = duration if duration > 0 else 1
+                duration *= record.multiply
                 qqbot.send(GroupBan(message.group, message.qq, duration * 60))
                 return True
     # Ignore
@@ -107,7 +116,7 @@ def words(message):
     return False
 
 
-@qqbot.listener((RcvdGroupMessage, ))
+# @qqbot.listener((RcvdGroupMessage, ))  # Increase count manually
 def banned(message):
     if message.qq != '1000000':
         return
@@ -129,7 +138,7 @@ def bantop(message):
     try:
         n = int(texts[1])
     except:
-        n = 4
+        n = 3
     topN = BanRecord.top(n)
     texts = ["**** 禁言次数排名 ****"]
     for qq, record in topN:
@@ -140,25 +149,66 @@ def bantop(message):
     return True
 
 
+@qqbot.listener((RcvdGroupMessage, RcvdPrivateMessage, ))
+def banset(message):
+    if message.qq not in ADMIN:
+        return
+    texts = message.text.split()
+    if not(len(texts) > 0 and texts[0] == '/banset'):
+        return
+    try:
+        qq = texts[1]
+        qqm = CQAt.PATTERN.fullmatch(qq)
+        if qqm and qqm.group(1):
+            qq = qqm.group(1)
+        n = int(texts[2])
+        record = BanRecord.get(qq)
+        record.count = n
+        reply(qqbot, message, "Set ban count: {qq} {count}".format(
+            qq=CQAt(qq), count=record.count))
+    except:
+        reply(qqbot, message, "Error parsing command.")
+    return True
+
+
+@qqbot.listener((RcvdGroupMessage, RcvdPrivateMessage, ))
+def banget(message):
+    if message.qq not in ADMIN:
+        return
+    texts = message.text.split()
+    if not(len(texts) > 0 and texts[0] == '/banget'):
+        return
+    try:
+        qq = texts[1]
+        qqm = CQAt.PATTERN.fullmatch(qq)
+        if qqm and qqm.group(1):
+            qq = qqm.group(1)
+        record = BanRecord.get(qq)
+        reply(qqbot, message, "Ban count: {qq} {count}".format(
+            qq=CQAt(qq), count=record.count))
+    except:
+        reply(qqbot, message, "Error parsing command.")
+    return True
+
+
 ################
 # FAQ
 ################
-FAQ_DEFAULT_INTERVAL = 60
-FAQ = []
-
-
 class FAQObject:
+    DEFAULT_INTERVAL = 60
+
     def __init__(self, opts):
         self.keywords = opts["keywords"]
         self.whitelist = opts.get("whitelist", [])
         self.message = opts["message"]
-        self.interval = opts.get("interval", FAQ_DEFAULT_INTERVAL)
+        self.interval = opts.get("interval", FAQObject.DEFAULT_INTERVAL)
         self.triggered = 0
 
 with open('faq.json', 'r', encoding="utf-8") as f:
-    jFAQ = json.loads(f.read())
-    for jfaq in jFAQ:
-        FAQ.append(FAQObject(jfaq))
+    FAQ = []
+    faqs = json.loads(f.read())
+    for faq in faqs:
+        FAQ.append(FAQObject(faq))
 
 
 @qqbot.listener((RcvdGroupMessage, ))
@@ -239,7 +289,7 @@ def roll(message):
 ################
 # repeat
 ################
-REPEAT_QUEUE_SIZE = 32
+REPEAT_QUEUE_SIZE = 20
 REPEAT_COUNT_MIN = 2
 REPEAT_COUNT_MAX = 4
 queue = deque()
@@ -254,14 +304,19 @@ class QueueMessage:
 
 
 class RandomQueue:
-    queue = []
+    def __init__(self, init, time=1):
+        self.init = init
+        self.time = time
+        self.queue = []
 
-    @classmethod
-    def next(cls):
-        if len(cls.queue) == 0:
-            cls.queue = 2 * [True, False, False]
-            random.shuffle(cls.queue)
-        return cls.queue.pop()
+    def next(self):
+        if len(self.queue) == 0:
+            self.queue = self.time * self.init
+            random.shuffle(self.queue)
+        return self.queue.pop()
+
+rQueue1 = RandomQueue([True, False, False], 2)
+rQueue2 = RandomQueue([True, False, False, False, False])
 
 
 @qqbot.listener((RcvdGroupMessage, ))
@@ -289,11 +344,11 @@ def repeat(message):
         queue.pop()
 
     # Ban4 event
-    if msg.repeated and sender not in ADMIN and RandomQueue.next():
+    if msg.repeated and sender not in ADMIN and rQueue1.next():
         record = BanRecord.get(sender)
-        duration = 2 ** record.count * 1
-        duration = duration if duration > 0 else 1
-        qqbot.send(GroupBan(message.group, sender, duration * 60))\
+        duration = record.multiply * 1
+        qqbot.send(GroupBan(message.group, sender, duration * 60))
+        record.increase()
 
     # Repeat message
     if msg.repeated or msg.count < REPEAT_COUNT_MIN:
@@ -302,6 +357,16 @@ def repeat(message):
         reply(qqbot, message, msg.text)
         msg.repeated = True
         return True
+
+
+# Ban4 event: fun
+@qqbot.listener((RcvdGroupMessage, ))
+def ban_every(message):
+    QQ = ['654989444']
+    if message.qq in QQ and rQueue2.next():
+        # record = BanRecord.get(message.qq)
+        # record.decrease()
+        qqbot.send(GroupBan(message.group, message.qq, 1 * 60))
 
 
 ################
