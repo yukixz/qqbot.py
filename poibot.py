@@ -31,15 +31,15 @@ BANNED_RESET_TIME = timedelta(hours=20)
 BAN_PATTERN = re.compile(r'\((\d+)\) *被管理员禁言')
 UNBAN_PATTERN = re.compile(r'\((\d+)\) *被管理员解除禁言')
 
-with open('admin.json', 'r', encoding="utf-8") as f:
-    data = json.loads(f.read())
-    ADMIN = data
-
 with open('poi.json', 'r', encoding="utf-8") as f:
     data = json.loads(f.read())
     BANNED_WORDS = data.get("banned-words", [])
     IGNORED_WORDS = data.get("ignored-words", [])
     IGNORED_USERS = data.get("ignored-users", [])
+    NOBAN_USERS = data.get("noban-users", [])
+
+with open('admin.json', 'r', encoding="utf-8") as f:
+    ADMIN = json.loads(f.read())
 
 
 class BanRecord:
@@ -100,13 +100,13 @@ def restriction(message):
 def words(message):
     lower_text = message.text.lower()
     # Ban
-    if message.qq not in ADMIN:
+    if message.qq not in NOBAN_USERS:
         record = BanRecord.get(message.qq)
         for o in BANNED_WORDS:
             keywords = o.get('keywords', [])
             duration = o.get('duration', 1)
             if match(lower_text, keywords):
-                duration *= record.multiply
+                # duration *= record.multiply
                 qqbot.send(GroupBan(message.group, message.qq, duration * 60))
                 return True
     # Ignore
@@ -344,7 +344,7 @@ def repeat(message):
         queue.pop()
 
     # Ban4 event
-    if msg.repeated and sender not in ADMIN and rQueue1.next():
+    if msg.repeated and sender not in NOBAN_USERS and rQueue1.next():
         record = BanRecord.get(sender)
         duration = record.multiply * 1
         qqbot.send(GroupBan(message.group, sender, duration * 60))
@@ -362,7 +362,7 @@ def repeat(message):
 # Ban4 event: fun
 @qqbot.listener((RcvdGroupMessage, ))
 def ban_every(message):
-    QQ = ['654989444']
+    QQ = []
     if message.qq in QQ and rQueue2.next():
         # record = BanRecord.get(message.qq)
         # record.decrease()
