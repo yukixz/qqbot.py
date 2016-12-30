@@ -12,7 +12,7 @@ from cqsdk import RE_CQ_SPECIAL, \
     GroupMemberDecrease, GroupMemberIncrease
 
 
-CQ_ROOT = r'C:/Users/dazzy/Desktop/CoolQ'
+CQ_ROOT = r'C:/Users/Administrator/Desktop/CQP'
 CQ_IMAGE_ROOT = os.path.join(CQ_ROOT, r'data/image')
 
 

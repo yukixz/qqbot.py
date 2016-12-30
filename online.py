@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from cqsdk import CQBot, \
     RcvdPrivateMessage, RcvdGroupMessage, SendPrivateMessage
-from utils import reply
+from utils import CQ_ROOT, reply
 
 
 qqbot = CQBot(11235)
@@ -79,7 +79,7 @@ class Restarter(threading.Thread):
         # 2.2. Start CoolQ
         logging.warning("Starting CoolQ")
         subprocess.Popen([
-            "C:/Users/dazzy/Desktop/CoolQ/CQP.exe",
+            CQ_ROOT + "/CQP.exe",
             "/account", "1695676191"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(30)
