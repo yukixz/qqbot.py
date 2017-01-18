@@ -1,3 +1,5 @@
+**DEPRECATED: The repo is no longer under maintenance.**
+
 # QQBot
 QQBot using CoolQ Socket API.
 
