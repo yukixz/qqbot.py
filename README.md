@@ -1,4 +1,4 @@
-**DEPRECATED: The repo is no longer under maintenance.**
+**DEPRECATED: The repo is no longer under maintenance. See another: https://github.com/jqqqqqqqqqq/coolq-telegram-bot.**
 
 # QQBot
 QQBot using CoolQ Socket API.
